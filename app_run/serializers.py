@@ -9,11 +9,13 @@ class RunSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserSerializers(serializers.ModelSerializer):
-    type = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField() #type - вычисляемое поле
 
     class Meta:
         model = User
         fields = ('id', 'date_joined', 'username', 'last_name', 'first_name', 'type')
+
+    # Метод для вычисления поля type
 
     def get_type(self, obj):
         return 'coach' if obj.is_staff else 'athlete'
