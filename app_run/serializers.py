@@ -9,8 +9,6 @@ class RunSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UserSerializers(serializers.ModelSerializer):
-    # type = serializers.SerializerMethodField()
-
     class Meta:
         model = User
-        fields = ('id', 'date_joined', 'username', 'last_name', 'first_name')
+        fields = ('id', 'date_joined', 'username', 'last_name', 'first_name', 'is_staff')
