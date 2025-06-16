@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
@@ -25,6 +26,8 @@ class RunViewSet(viewsets.ModelViewSet):
 class UserViewSet(ReadOnlyModelViewSet):
     queryset = User.objects.filter(is_superuser=False) #Исключаем передачу суперпользователей
     serializer_class = UserSerializers
+    filter_backends = [SearchFilter]
+    search_fields = ['first_name', 'last_name']
 
     def get_queryset(self):         #фильтрация по типу тренер/атлет. Переопределение метода get_queryset
         qs = self.queryset
