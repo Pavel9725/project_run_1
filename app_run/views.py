@@ -49,6 +49,7 @@ class UserViewSet(ReadOnlyModelViewSet):
     ordering_fields = ['date_joined']
     pagination_class = UserPagination
 
+
     def get_queryset(self):  # фильтрация по типу тренер/атлет. Переопределение метода get_queryset
         qs = self.queryset
         type = self.request.query_params.get('type', None)  # Получение параметра из запроса get
