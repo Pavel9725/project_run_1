@@ -130,5 +130,5 @@ class AthleteInfoView(APIView):
         return Response(serializer_athlete_info.data, status=status.HTTP_201_CREATED)
 
 class Athlete_infoViewSet(viewsets.ModelViewSet):
-    queryset = AthleteInfo.objects.all()
+    queryset = AthleteInfo.objects.select_related('user').all()
     serializer_class = AthleteInfoViewSerializer

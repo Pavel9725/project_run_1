@@ -37,4 +37,4 @@ class UserSerializers(serializers.ModelSerializer):
 class AthleteInfoViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = AthleteInfo
-        fields = ('goals', 'weight')
+        fields = ('user_id' ,'goals', 'weight')
