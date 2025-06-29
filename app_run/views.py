@@ -12,8 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from app_run.models import Run, AthleteInfo
-from app_run.serializers import RunSerializer, UserSerializers, AthleteInfoViewSerializer
+from app_run.models import Run, AthleteInfo, Challenge
+from app_run.serializers import RunSerializer, UserSerializers, AthleteInfoViewSerializer, ChallengeSerializer
 
 
 @api_view(['GET'])
@@ -121,13 +121,21 @@ class AthleteInfoView(APIView):
         user = get_object_or_404(User, id=user_id)
         athlete_info, created = AthleteInfo.objects.update_or_create(user=user, defaults=request.data)
 
-        if athlete_info.weight is None or athlete_info.weight <= 0 or athlete_info.weight >= 900:
+        weight = float(athlete_info.weight)
+        if weight is None or weight <= 0 or weight >= 900:
             return Response(
                 {'error': 'Weight must be greater than 0 and less than 900.'}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer_athlete_info = AthleteInfoViewSerializer(athlete_info)
-        return Response(serializer_athlete_info.data, status=status.HTTP_201_CREATED)
+        return Response(serializer_athlete_info.data, status=status.HTTP_200_OK)
 
 class Athlete_infoViewSet(viewsets.ModelViewSet):
     queryset = AthleteInfo.objects.all()
     serializer_class = AthleteInfoViewSerializer
+
+# class ChallengeViewSet(viewsets.ModelViewSet):
+#     queryset = Challenge.objects.select_related('athlete').all()
+#     serializer_class = ChallengeSerializer
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_fields = ['athlete']
+
