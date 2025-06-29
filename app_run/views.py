@@ -2,7 +2,6 @@ from gc import get_objects
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.serializers import serialize
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
@@ -130,5 +129,5 @@ class AthleteInfoView(APIView):
         return Response(serializer_athlete_info.data, status=status.HTTP_201_CREATED)
 
 class Athlete_infoViewSet(viewsets.ModelViewSet):
-    queryset = AthleteInfo.objects.select_related('user').all()
+    queryset = AthleteInfo.objects.all()
     serializer_class = AthleteInfoViewSerializer
