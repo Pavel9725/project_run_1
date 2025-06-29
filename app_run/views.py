@@ -113,9 +113,6 @@ def stop_run_view(request, run_id):
 
 class AthleteInfoView(APIView):
     def get(self, request, user_id):
-        print(user_id)
-        if user_id is None or user_id == 'None':
-            return Response({'detail': 'User ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
         user = get_object_or_404(User, id=user_id)
         athlete_info, created = AthleteInfo.objects.get_or_create(user=user)
         serializer_athlete_info = AthleteInfoViewSerializer(athlete_info)
