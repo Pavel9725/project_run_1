@@ -113,6 +113,9 @@ def stop_run_view(request, run_id):
 
 class AthleteInfoView(APIView):
     def get(self, request, user_id):
+        print(user_id)
+        if user_id is None or user_id == 'None':
+            return Response({'detail': 'User ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
         user = get_object_or_404(User, id=user_id)
         athlete_info, created = AthleteInfo.objects.get_or_create(user=user)
         serializer_athlete_info = AthleteInfoViewSerializer(athlete_info)
@@ -122,9 +125,9 @@ class AthleteInfoView(APIView):
         user = get_object_or_404(User, id=user_id)
         athlete_info, created = AthleteInfo.objects.update_or_create(user=user, defaults=request.data)
 
-        if athlete_info.weightis is None or athlete_info.weight <= 0 or athlete_info.weight >= 900:
+        if athlete_info.weight is None or athlete_info.weight <= 0 or athlete_info.weight >= 900:
             return Response(
-                {'eror': 'Weight must be greater than 0 and less than 900.'}, status=status.HTTP_400_BAD_REQUEST)
+                {'error': 'Weight must be greater than 0 and less than 900.'}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer_athlete_info = AthleteInfoViewSerializer(athlete_info)
         return Response(serializer_athlete_info.data, status=status.HTTP_201_CREATED)

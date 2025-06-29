@@ -21,3 +21,6 @@ class AthleteInfo(models.Model):
     goals = models.TextField(blank=True, null=True)
     weight = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='athlete_info')
+
+    def __str__(self):
+        return f'{self.user} id:{self.user_id}'
