@@ -23,7 +23,7 @@ from app_run.views import company_details, RunViewSet, UserViewSet, StartRunView
 router = DefaultRouter()
 router.register('api/runs', RunViewSet)
 router.register('api/users', UserViewSet)
-router.register('api/athlete_info/None', Athlete_infoViewSet)
+router.register('api/athlete_info', Athlete_infoViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
