@@ -35,6 +35,7 @@ class UserSerializers(serializers.ModelSerializer):
         return obj.runs.filter(status='finished').count()
 
 class AthleteInfoViewSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source='user.id',read_only=True)
     class Meta:
         model = AthleteInfo
         fields = ('goals', 'weight', 'user_id')
