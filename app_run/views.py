@@ -114,6 +114,8 @@ def stop_run_view(request, run_id):
 class AthleteInfoView(APIView):
     def get(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
+        if user.id is None:
+            return Response(status.HTTP_400_BAD_REQUEST)
         athlete_info, created = AthleteInfo.objects.get_or_create(user=user)
         serializer_athlete_info = AthleteInfoViewSerializer(athlete_info)
         return Response(serializer_athlete_info.data)
