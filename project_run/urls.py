@@ -17,7 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from app_run.views import company_details, RunViewSet, UserViewSet, StartRunView, StopRunView, start_run_view, stop_run_view
+from app_run.views import company_details, RunViewSet, UserViewSet, StartRunView, StopRunView, start_run_view, \
+    stop_run_view, AthleteInfoView
 
 router = DefaultRouter()
 router.register('api/runs', RunViewSet)
@@ -28,7 +29,8 @@ urlpatterns = [
     path('api/company_details/', company_details),
     path('', include(router.urls)),
     path('api/runs/<int:run_id>/start/', StartRunView.as_view(), name='start_run'),
-    path('api/runs/<int:run_id>/stop/', StopRunView.as_view(), name='stop_run')
+    path('api/runs/<int:run_id>/stop/', StopRunView.as_view(), name='stop_run'),
+    path('api/athlete_info/<int:user_id>/', AthleteInfoView.as_view(), name='athlete_info'),
 
     #method_2: @api_view
 #     path('api/runs/<int:run_id>/start/', start_run_view),

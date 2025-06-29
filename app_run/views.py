@@ -2,6 +2,7 @@ from gc import get_objects
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.serializers import serialize
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
@@ -12,8 +13,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from app_run.models import Run
-from app_run.serializers import RunSerializer, UserSerializers
+from app_run.models import Run, AthleteInfo
+from app_run.serializers import RunSerializer, UserSerializers, AthleteInfoViewSerializer
 
 
 @api_view(['GET'])
@@ -28,8 +29,10 @@ def company_details(request):
 class RunPagination(PageNumberPagination):
     page_size_query_param = 'size'
 
+
 class UserPagination(PageNumberPagination):
     page_size_query_param = 'size'
+
 
 class RunViewSet(viewsets.ModelViewSet):
     queryset = Run.objects.select_related('athlete').all()
@@ -48,7 +51,6 @@ class UserViewSet(ReadOnlyModelViewSet):
     search_fields = ['first_name', 'last_name']
     ordering_fields = ['date_joined']
     pagination_class = UserPagination
-
 
     def get_queryset(self):  # фильтрация по типу тренер/атлет. Переопределение метода get_queryset
         qs = self.queryset
@@ -107,3 +109,22 @@ def stop_run_view(request, run_id):
     run.status = 'finished'
     run.save()
     return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
+
+
+class AthleteInfoView(APIView):
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        athlete_info, created = AthleteInfo.objects.get_or_create(user=user)
+        serializer_athlete_info = AthleteInfoViewSerializer(athlete_info)
+        return Response(serializer_athlete_info.data)
+
+    def put(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        athlete_info, created = AthleteInfo.objects.update_or_create(user=user, default=request.data)
+
+        if athlete_info.weihgt <= 0 or athlete_info.weihgt >= 900:
+            return Response(
+                {'eror': 'Weight must be greater than 0 and less than 900.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer_athlete_info = AthleteInfoViewSerializer(athlete_info)
+            return Response(serializer_athlete_info.data, status=status.HTTP_201_CREATED)
