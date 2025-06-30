@@ -15,7 +15,7 @@ class Run(models.Model):
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='init')
 
     def __str__(self):
-        return f'{self.athlete} id:{self.id}'
+        return f'{self.athlete} id:{self.id} {self.status}'
 
 class AthleteInfo(models.Model):
     goals = models.TextField(blank=True, default='')
@@ -28,3 +28,6 @@ class AthleteInfo(models.Model):
 class Challenge(models.Model):
     full_name = models.CharField(max_length=255)
     athlete = models.ForeignKey(AthleteInfo, on_delete=models.CASCADE, related_name='challenges')
+
+    def __str__(self):
+        return f'{self.full_name} athelete: {self.athlete}'

@@ -82,6 +82,15 @@ class StopRunView(APIView):
 
         run.status = 'finished'
         run.save()
+
+        user = run.athlete
+        athlete_info = user.athlete_info
+
+        finished_run_count = Run.objects.filter(athlete=user, status='finished').count()
+
+        if finished_run_count == 10:
+            Challenge.objects.create(full_name='Сделай 10 Забегов!', athlete=athlete_info)
+
         return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
 
 
@@ -128,7 +137,7 @@ class AthleteInfoView(APIView):
                 data['weight'] = weight_int
             except (ValueError, TypeError):
                 return Response(
-                {'error': 'Weight must be an integer.'}, status=status.HTTP_400_BAD_REQUEST)
+                    {'error': 'Weight must be an integer.'}, status=status.HTTP_400_BAD_REQUEST)
         athlete_info, created = AthleteInfo.objects.update_or_create(user=user, defaults=request.data)
 
         weight = int(athlete_info.weight)
@@ -139,13 +148,14 @@ class AthleteInfoView(APIView):
         serializer_athlete_info = AthleteInfoViewSerializer(athlete_info)
         return Response(serializer_athlete_info.data, status=status.HTTP_201_CREATED)
 
+
 class Athlete_infoViewSet(viewsets.ModelViewSet):
     queryset = AthleteInfo.objects.all()
     serializer_class = AthleteInfoViewSerializer
 
-# class ChallengeViewSet(viewsets.ModelViewSet):
-#     queryset = Challenge.objects.select_related('athlete').all()
-#     serializer_class = ChallengeSerializer
-#     filter_backends = [DjangoFilterBackend]
-#     filterset_fields = ['athlete']
 
+class ChallengeViewSet(viewsets.ModelViewSet):
+    queryset = Challenge.objects.select_related('athlete').all()
+    serializer_class = ChallengeSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['athlete']
