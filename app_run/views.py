@@ -119,15 +119,25 @@ class AthleteInfoView(APIView):
 
     def put(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
+        data = request.data.copy()
+
+        weight_value = data.get('weight')
+        if weight_value is not None:
+            try:
+                weight_int = int(weight_value)
+                data['weight'] = weight_int
+            except (ValueError, TypeError):
+                return Response(
+                {'error': 'Weight must be an integer.'}, status=status.HTTP_400_BAD_REQUEST)
         athlete_info, created = AthleteInfo.objects.update_or_create(user=user, defaults=request.data)
 
-        weight = float(athlete_info.weight)
+        weight = int(athlete_info.weight)
         if weight is None or weight <= 0 or weight >= 900:
             return Response(
                 {'error': 'Weight must be greater than 0 and less than 900.'}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer_athlete_info = AthleteInfoViewSerializer(athlete_info)
-        return Response(serializer_athlete_info.data, status=status.HTTP_200_OK)
+        return Response(serializer_athlete_info.data, status=status.HTTP_201_CREATED)
 
 class Athlete_infoViewSet(viewsets.ModelViewSet):
     queryset = AthleteInfo.objects.all()
