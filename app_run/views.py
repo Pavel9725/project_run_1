@@ -89,7 +89,7 @@ class StopRunView(APIView):
         try:
             athlete_info = user.athlete_info
         except ObjectDoesNotExist:
-            return Response({'detail': 'Athlete info not found for user.'}, status=status.HTTP_400_BAD_REQUEST)
+            athlete_info = AthleteInfo.objects.create(user=user)
 
         finished_run_count = Run.objects.filter(athlete=user, status='finished').count()
 
