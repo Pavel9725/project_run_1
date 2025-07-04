@@ -2,6 +2,7 @@ from gc import get_objects
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
@@ -84,7 +85,11 @@ class StopRunView(APIView):
         run.save()
 
         user = run.athlete
-        athlete_info = user.athlete_info
+
+        try:
+            athlete_info = user.athlete_info
+        except ObjectDoesNotExist:
+            return Response({'detail': 'Athlete info not found for user.'}, status=status.HTTP_400_BAD_REQUEST)
 
         finished_run_count = Run.objects.filter(athlete=user, status='finished').count()
 
