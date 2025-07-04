@@ -15,7 +15,7 @@ class Run(models.Model):
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='init')
 
     def __str__(self):
-        return f'{self.athlete.id} id:{self.id} {self.status}'
+        return f'athlete_id: {self.athlete.id} id:{self.id} {self.status}'
 
 class AthleteInfo(models.Model):
     goals = models.TextField(blank=True, default='')
