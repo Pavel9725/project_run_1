@@ -30,4 +30,4 @@ class Challenge(models.Model):
     athlete = models.ForeignKey(AthleteInfo, on_delete=models.CASCADE, related_name='challenges')
 
     def __str__(self):
-        return f'{self.full_name} athelete: {self.athlete}'
+        return f'{self.full_name} athlete: {self.athlete}'

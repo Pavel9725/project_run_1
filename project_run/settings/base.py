@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    "debug_toolbar",
+
     'rest_framework',
     'django_filters',
 
@@ -51,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = 'project_run.urls'
@@ -120,3 +123,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 COMPANY_NAME = 'Бегуны до 18'
 SLOGAN = 'Молодые бегуны, обгонят всех!'
 CONTACTS = 'Город Москва, улица Ленина, дом 2'
+
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]

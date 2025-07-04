@@ -94,7 +94,8 @@ class StopRunView(APIView):
         finished_run_count = Run.objects.filter(athlete=user, status='finished').count()
 
         if finished_run_count == 10:
-            Challenge.objects.create(full_name='Сделай 10 Забегов!', athlete=athlete_info)
+            if not Challenge.objects.filter(full_name='Сделай 10 Забегов!', athlete=athlete_info).exists():
+                Challenge.objects.create(full_name='Сделай 10 Забегов!', athlete=athlete_info)
 
         return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
 
@@ -160,7 +161,7 @@ class Athlete_infoViewSet(viewsets.ModelViewSet):
 
 
 class ChallengeViewSet(viewsets.ModelViewSet):
-    queryset = Challenge.objects.select_related('athlete').all()
+    queryset = Challenge.objects.select_related('athlete__user').all()
     serializer_class = ChallengeSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['athlete']

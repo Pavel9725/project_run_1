@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from debug_toolbar.toolbar import debug_toolbar_urls
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -38,4 +39,4 @@ urlpatterns = [
     #method_2: @api_view
 #     path('api/runs/<int:run_id>/start/', start_run_view),
 #     path('api/runs/<int:run_id>/stop/', stop_run_view),
- ]
+ ] + debug_toolbar_urls()
