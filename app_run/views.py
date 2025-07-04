@@ -161,7 +161,7 @@ class Athlete_infoViewSet(viewsets.ModelViewSet):
 
 
 class ChallengeViewSet(viewsets.ModelViewSet):
-    queryset = Challenge.objects.select_related('athlete__user').all()
+    queryset = Challenge.objects.select_related('athlete').all()
     serializer_class = ChallengeSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['athlete']
