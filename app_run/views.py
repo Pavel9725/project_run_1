@@ -4,7 +4,9 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
+from django_filters import NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework as filters
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -159,19 +161,23 @@ class Athlete_infoViewSet(viewsets.ModelViewSet):
     queryset = AthleteInfo.objects.all()
     serializer_class = AthleteInfoViewSerializer
 
+class ChallengeFilter(filters.FilterSet):
+    athlete = NumberFilter(field_name='athlete__user__id')
+
+    class Meta:
+        model = Challenge
+        fields  = ['athlete']
 
 class ChallengeViewSet(viewsets.ModelViewSet):
     queryset = Challenge.objects.select_related('athlete').all()
     serializer_class = ChallengeSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['athlete__user__id']
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ChallengeFilter
 
-    # filter_backends = [DjangoFilterBackend]
-    # filterset_fields = ['athlete']
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        athlete_id = self.request.query_params.get('athlete')
-        if athlete_id:
-            qs = qs.filter(athlete__user__id=athlete_id)
-        return qs
+    # def get_queryset(self):
+    #     qs = self.queryset
+    #     athlete_id = self.request.query_params.get('athlete')
+    #     if athlete_id:
+    #         qs = qs.filter(athlete__user__id=athlete_id)
+    #     return qs
