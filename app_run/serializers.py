@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from app_run.models import Run, AthleteInfo, Challenge
+from app_run.models import Run, AthleteInfo, Challenge, Position
 
 
 # serializer to api/runs nested serializer
@@ -45,3 +45,24 @@ class ChallengeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Challenge
         fields = ('full_name', 'athlete')
+
+class PositionSerializer(serializers.ModelSerializer):
+    run = serializers.PrimaryKeyRelatedField(queryset=Run.objects.all())
+    class Meta:
+        model = Position
+        fields = ('run', 'latitude', 'longitude')
+
+    def validate_run(self, value):
+        if value.status != 'in_progress':
+                raise serializers.ValidationError('Забег должен быть в статусе "in progress"')
+        return value
+
+
+    def validate(self, data):
+        latitude = data['latitude']
+        longitude = data['longitude']
+        if float(latitude) < -90.0 or float(latitude) > 90.0:
+            raise serializers.ValidationError("Широта должна находиться в диапазоне от -90.0 до +90.0 градусов")
+        if float(longitude) < -180.0 or float(longitude) > 180.0:
+            raise serializers.ValidationError("Долгота должна находиться в диапазоне от -180.0 до +180.0 градусов")
+        return data
