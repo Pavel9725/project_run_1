@@ -50,7 +50,7 @@ class PositionSerializer(serializers.ModelSerializer):
     run = serializers.PrimaryKeyRelatedField(queryset=Run.objects.all())
     class Meta:
         model = Position
-        fields = ('run_id', 'latitude', 'longitude')
+        fields = ('run', 'latitude', 'longitude')
 
     def validate_run(self, value):
         if value.status != 'in_progress':
