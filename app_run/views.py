@@ -97,6 +97,7 @@ class StopRunView(APIView):
                 total_distance += geodesic(start, end).kilometers
         run.distance = round(total_distance, 3)
         run.save()
+
         user = run.athlete
 
         try:
