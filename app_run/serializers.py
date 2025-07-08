@@ -51,6 +51,8 @@ class ChallengeSerializer(serializers.ModelSerializer):
 
 class PositionSerializer(serializers.ModelSerializer):
     run = serializers.PrimaryKeyRelatedField(queryset=Run.objects.all())
+    latitude = serializers.FloatField(required=True)
+    longitude = serializers.FloatField(required=True)
 
     class Meta:
         model = Position
