@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django_filters import NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters
+from geopy.distance import geodesic
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -84,10 +85,18 @@ class StopRunView(APIView):
         if run.status != 'in_progress':
             return Response({'detail': 'Invalid run status for stopping.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        run.status = 'finished'
-        run.distance = run.calc_run_distance()
-        run.save()
+        positions = list(run.positions.order_by('id'))
+        total_distance = 0.0
 
+
+        run.status = 'finished'
+        if len(positions) > 2:
+            for i in range(len(positions) - 1):
+                start = (positions[i].latitude, positions[i].longitude)
+                end = (positions[i+1].latitude, positions[i+1].longitude)
+                total_distance += geodesic(start, end).kilometers
+        run.distance = round(total_distance, 3)
+        run.save()
         user = run.athlete
 
         try:
@@ -115,7 +124,6 @@ def start_run_view(request, run_id):
     run.status = 'in_progress'
     run.save()
     return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
-
 
 @api_view(['POST'])
 def stop_run_view(request, run_id):
@@ -177,13 +185,6 @@ class ChallengeViewSet(viewsets.ModelViewSet):
     serializer_class = ChallengeSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ChallengeFilter
-
-    # def get_queryset(self):
-    #     qs = self.queryset
-    #     athlete_id = self.request.query_params.get('athlete')
-    #     if athlete_id:
-    #         qs = qs.filter(athlete__user__id=athlete_id)
-    #     return qs
 
 
 class PositionFilter(filters.FilterSet):

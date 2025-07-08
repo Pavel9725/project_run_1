@@ -14,22 +14,10 @@ class Run(models.Model):
     athlete = models.ForeignKey(User, on_delete=models.CASCADE, related_name='runs')
     comment = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='init')
-    distance = models.FloatField(null=True, blank=True)
+    distance = models.FloatField(blank=True, null=True)
 
     def __str__(self):
         return f'athlete_id: {self.athlete.id} id:{self.id} {self.status}'
-
-    def calc_run_distance(self):
-        positions = self.positions.order_by('id')
-        if not positions.exists():
-            return 0.0
-        start = positions.first()
-        end = positions.last()
-        start_coordinate = (start.latitude, start.longitude)
-        end_coordinate = (end.latitude, end.longitude)
-        distance = geodesic(start_coordinate, end_coordinate).kilometers
-
-        return round(distance, 3)
 
 
 class AthleteInfo(models.Model):
