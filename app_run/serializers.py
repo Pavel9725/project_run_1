@@ -66,7 +66,9 @@ class PositionSerializer(serializers.ModelSerializer):
     def validate_latitude(self, value):
         if float(value) < -90.0 or float(value) > 90.0:
             raise serializers.ValidationError("Широта должна находиться в диапазоне от -90.0 до +90.0 градусов")
+        return value
 
     def validate_longitude(self, value):
         if float(value) < -90.0 or float(value) > 90.0:
             raise serializers.ValidationError("Долгота должна находиться в диапазоне от -180.0 до +180.0 градусов")
+        return value
