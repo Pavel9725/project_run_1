@@ -3,6 +3,7 @@ from gc import get_objects
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django_filters import NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -110,6 +111,12 @@ class StopRunView(APIView):
         if finished_run_count == 10:
             if not Challenge.objects.filter(full_name='Сделай 10 Забегов!', athlete=athlete_info).exists():
                 Challenge.objects.create(full_name='Сделай 10 Забегов!', athlete=athlete_info)
+
+        sum_run_distance = Run.objects.filter(athlete=user).aggregate(sum_distance=Sum('distance'))['sum_distance'] or 0
+
+        if sum_run_distance >= 50:
+            if not Challenge.objects.filter(full_name='Пробеги 50 км!', athlete=athlete_info).exists():
+                Challenge.objects.create(full_name='Пробеги 50 км!', athlete=athlete_info)
 
         return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
 
