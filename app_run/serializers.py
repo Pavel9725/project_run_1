@@ -34,10 +34,12 @@ class UserSerializers(serializers.ModelSerializer):
     def get_runs_finished(self, obj):
         return obj.runs.filter(status='finished').count()
 
+
 class AthleteInfoViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = AthleteInfo
-        fields = ('user_id' ,'goals', 'weight')
+        fields = ('user_id', 'goals', 'weight')
+
 
 class ChallengeSerializer(serializers.ModelSerializer):
     athlete = serializers.IntegerField(source='athlete.user.id', read_only=True)
@@ -46,23 +48,23 @@ class ChallengeSerializer(serializers.ModelSerializer):
         model = Challenge
         fields = ('full_name', 'athlete')
 
+
 class PositionSerializer(serializers.ModelSerializer):
     run = serializers.PrimaryKeyRelatedField(queryset=Run.objects.all())
+
     class Meta:
         model = Position
         fields = ('run', 'latitude', 'longitude')
 
     def validate_run(self, value):
         if value.status != 'in_progress':
-                raise serializers.ValidationError('Забег должен быть в статусе "in progress"')
+            raise serializers.ValidationError('Забег должен быть в статусе "in progress"')
         return value
 
-
-    def validate(self, data):
-        latitude = data['latitude']
-        longitude = data['longitude']
-        if float(latitude) < -90.0 or float(latitude) > 90.0:
+    def validate_latitude(self, value):
+        if float(value) < -90.0 or float(value) > 90.0:
             raise serializers.ValidationError("Широта должна находиться в диапазоне от -90.0 до +90.0 градусов")
-        if float(longitude) < -180.0 or float(longitude) > 180.0:
+
+    def validate_longitude(self, value):
+        if float(value) < -90.0 or float(value) > 90.0:
             raise serializers.ValidationError("Долгота должна находиться в диапазоне от -180.0 до +180.0 градусов")
-        return data
