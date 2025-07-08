@@ -85,6 +85,7 @@ class StopRunView(APIView):
             return Response({'detail': 'Invalid run status for stopping.'}, status=status.HTTP_400_BAD_REQUEST)
 
         run.status = 'finished'
+        run.distance = run.calc_run_distance()
         run.save()
 
         user = run.athlete
