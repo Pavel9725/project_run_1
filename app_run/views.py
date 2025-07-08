@@ -198,3 +198,10 @@ class PositionViewSet(viewsets.ModelViewSet):
     serializer_class = PositionSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = PositionFilter
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        position = serializer.save()
+
+        return Response({'id': position.id}, status=status.HTTP_201_CREATED)
