@@ -261,6 +261,5 @@ class UploadFileView(APIView):
 
             for serializer in valid_data:
                 serializer.save()
-                return Response({'created': len(valid_data), 'invalid_data': invalid_data},status=status.HTTP_201_CREATED)
+                return Response({'created': len(valid_data), 'invalid_data': invalid_data},status=status.HTTP_200_OK)
 
-        return Response('Ok', status=status.HTTP_200_OK)
