@@ -228,17 +228,17 @@ class CollectibleItemViewSet(viewsets.ModelViewSet):
 
 class UploadFileView(APIView):
     def post(self, request):
-        uploaded_file = request.FILES.get('file')
+        # uploaded_file = request.FILES.get('file')
 
-        #uploaded_file = load_workbook('C:/Users/pyatk/Downloads/upload_example.xlsx')
+        uploaded_file = load_workbook('C:/Users/pyatk/Downloads/upload_example.xlsx')
 
         if uploaded_file is None:
             return Response({'error': 'File not found.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        file_data = load_workbook(uploaded_file)
+        # file_data = load_workbook(uploaded_file)
 
-        #ws = uploaded_file.active
-        ws = file_data.active
+        ws = uploaded_file.active
+        # ws = file_data.active
         rows = list(ws.iter_rows(min_row=2, values_only=True))
 
         valid_data = []
@@ -257,9 +257,9 @@ class UploadFileView(APIView):
 
             if serializer.is_valid():
                 valid_data.append(serializer)
-            else: invalid_data.append(list(row))
+            else:
+                invalid_data.append(list(row))
 
-            for serializer in valid_data:
-                serializer.save()
-                return Response({'created': len(valid_data), 'invalid_data': invalid_data},status=status.HTTP_200_OK)
-
+        for serializer in valid_data:
+            serializer.save()
+            return Response(invalid_data, status=status.HTTP_200_OK)
