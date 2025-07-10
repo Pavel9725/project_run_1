@@ -262,4 +262,4 @@ class UploadFileView(APIView):
 
         for serializer in valid_data:
             serializer.save()
-            return Response(invalid_data, status=status.HTTP_200_OK)
+        return Response(invalid_data, status=status.HTTP_200_OK)
