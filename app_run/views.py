@@ -21,7 +21,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 from app_run.serializers import RunSerializer, UserSerializers, AthleteInfoViewSerializer, ChallengeSerializer, \
-    PositionSerializer, CollectibleItemSerializer
+    PositionSerializer, CollectibleItemSerializer, UserCollectibleItemSerializers
 
 
 @api_view(['GET'])
@@ -51,7 +51,7 @@ class RunViewSet(viewsets.ModelViewSet):
     pagination_class = RunPagination
 
 
-class UserViewSet(ReadOnlyModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(is_superuser=False)  # Исключаем передачу суперпользователей
     serializer_class = UserSerializers
     filter_backends = [SearchFilter, OrderingFilter]
@@ -67,6 +67,13 @@ class UserViewSet(ReadOnlyModelViewSet):
         elif type == 'athlete':
             qs = qs.filter(is_staff=False)
         return qs
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return UserSerializers
+        elif self.action == 'retrieve':
+            return UserCollectibleItemSerializers
+        return super().get_serializer_class()
 
 
 class StartRunView(APIView):
@@ -208,7 +215,7 @@ class PositionFilter(filters.FilterSet):
 
 
 class PositionViewSet(viewsets.ModelViewSet):
-    queryset = Position.objects.all()
+    queryset = Position.objects.select_related.all()
     serializer_class = PositionSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = PositionFilter
@@ -228,17 +235,17 @@ class CollectibleItemViewSet(viewsets.ModelViewSet):
 
 class UploadFileView(APIView):
     def post(self, request):
-        # uploaded_file = request.FILES.get('file')
+        uploaded_file = request.FILES.get('file')
 
-        uploaded_file = load_workbook('C:/Users/pyatk/Downloads/upload_example.xlsx')
+        #uploaded_file = load_workbook('C:/Users/pyatk/Downloads/upload_example.xlsx')
 
         if uploaded_file is None:
             return Response({'error': 'File not found.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # file_data = load_workbook(uploaded_file)
+        file_data = load_workbook(uploaded_file)
 
-        ws = uploaded_file.active
-        # ws = file_data.active
+        #ws = uploaded_file.active
+        ws = file_data.active
         rows = list(ws.iter_rows(min_row=2, values_only=True))
 
         valid_data = []

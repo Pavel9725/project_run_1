@@ -3,6 +3,12 @@ from rest_framework import serializers
 from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 
 
+class CollectibleItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CollectibleItem
+        fields = ('name', 'uid', 'value', 'latitude', 'longitude', 'picture')
+
+
 # serializer to api/runs nested serializer
 class UserBasicSerializers(serializers.ModelSerializer):
     class Meta:
@@ -15,7 +21,7 @@ class RunSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Run
-        fields = '__all__'
+        fields = ('id','created_at', 'athlete', 'comment', 'status', 'distance', 'athlete_data')
 
 
 # serializer to api/users
@@ -27,12 +33,20 @@ class UserSerializers(serializers.ModelSerializer):
         model = User
         fields = ('id', 'date_joined', 'username', 'last_name', 'first_name', 'type', 'runs_finished')
 
-    # Метод для вычисления поля type
+        # Метод для вычисления поля type
     def get_type(self, obj):
         return 'coach' if obj.is_staff else 'athlete'
 
     def get_runs_finished(self, obj):
         return obj.runs.filter(status='finished').count()
+
+
+class UserCollectibleItemSerializers(UserSerializers):
+    items = CollectibleItemSerializer(many=True, source='collectible_items')
+
+    class Meta(UserSerializers.Meta):
+        model = User
+        fields = UserSerializers.Meta.fields + ('items',)
 
 
 class AthleteInfoViewSerializer(serializers.ModelSerializer):
@@ -73,8 +87,5 @@ class PositionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Долгота должна находиться в диапазоне от -180.0 до +180.0 градусов")
         return value
 
-class CollectibleItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CollectibleItem
-        fields = ('name', 'uid', 'value', 'latitude', 'longitude', 'picture')
+
 
