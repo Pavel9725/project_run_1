@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from app_run.models import Run, AthleteInfo, Challenge, Position
+from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 
 
 # serializer to api/runs nested serializer
@@ -72,3 +72,9 @@ class PositionSerializer(serializers.ModelSerializer):
         if float(value) < -180.0 or float(value) > 180.0:
             raise serializers.ValidationError("Долгота должна находиться в диапазоне от -180.0 до +180.0 градусов")
         return value
+
+class CollectibleItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CollectibleItem
+        fields = ('name', 'uid', 'value', 'latitude', 'longitude', 'picture')
+

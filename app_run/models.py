@@ -41,3 +41,12 @@ class Position(models.Model):
     run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='positions')
     latitude = models.DecimalField(max_digits=7, decimal_places=4, default=0)
     longitude = models.DecimalField(max_digits=8, decimal_places=4, default=0)
+
+
+class CollectibleItem(models.Model):
+    name = models.CharField(max_length=255)
+    uid = models.CharField(max_length=255, unique=True)
+    value = models.IntegerField()
+    latitude = models.DecimalField(max_digits=7, decimal_places=4)
+    longitude = models.DecimalField(max_digits=7, decimal_places=4)
+    picture = models.URLField()

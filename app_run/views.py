@@ -3,12 +3,14 @@ from gc import get_objects
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.serializers import serialize
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django_filters import NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters
 from geopy.distance import geodesic
+from openpyxl import load_workbook
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -17,9 +19,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from app_run.models import Run, AthleteInfo, Challenge, Position
+from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 from app_run.serializers import RunSerializer, UserSerializers, AthleteInfoViewSerializer, ChallengeSerializer, \
-    PositionSerializer
+    PositionSerializer, CollectibleItemSerializer
 
 
 @api_view(['GET'])
@@ -89,14 +91,14 @@ class StopRunView(APIView):
         positions = list(run.positions.order_by('id'))
         total_distance = 0.0
 
-
         run.status = 'finished'
         if len(positions) > 2:
             for i in range(len(positions) - 1):
                 start = (positions[i].latitude, positions[i].longitude)
-                end = (positions[i+1].latitude, positions[i+1].longitude)
+                end = (positions[i + 1].latitude, positions[i + 1].longitude)
                 total_distance += geodesic(start, end).kilometers
         run.distance = round(total_distance, 3)
+
         run.save()
 
         user = run.athlete
@@ -112,7 +114,8 @@ class StopRunView(APIView):
             if not Challenge.objects.filter(full_name='Сделай 10 Забегов!', athlete=athlete_info).exists():
                 Challenge.objects.create(full_name='Сделай 10 Забегов!', athlete=athlete_info)
 
-        sum_run_distance = Run.objects.filter(athlete=user).aggregate(total_distance=Sum('distance'))['total_distance'] or 0
+        sum_run_distance = Run.objects.filter(athlete=user, status='finished').aggregate(total=Sum('distance'))[
+                               'total'] or 0
 
         if sum_run_distance >= 50:
             if not Challenge.objects.filter(full_name='Пробеги 50 километров!', athlete=athlete_info).exists():
@@ -132,6 +135,7 @@ def start_run_view(request, run_id):
     run.status = 'in_progress'
     run.save()
     return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 def stop_run_view(request, run_id):
@@ -215,3 +219,48 @@ class PositionViewSet(viewsets.ModelViewSet):
         position = serializer.save()
 
         return Response({'id': position.id}, status=status.HTTP_201_CREATED)
+
+
+class CollectibleItemViewSet(viewsets.ModelViewSet):
+    queryset = CollectibleItem.objects.all()
+    serializer_class = CollectibleItemSerializer
+
+
+class UploadFileView(APIView):
+    def post(self, request):
+        uploaded_file = request.FILES.get('file')
+
+        #uploaded_file = load_workbook('C:/Users/pyatk/Downloads/upload_example.xlsx')
+
+        if uploaded_file is None:
+            return Response({'error': 'File not found.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        file_data = load_workbook(uploaded_file)
+
+        #ws = uploaded_file.active
+        ws = file_data.active
+        rows = list(ws.iter_rows(min_row=2, values_only=True))
+
+        valid_data = []
+        invalid_data = []
+
+        for row in rows:
+            data = {
+                'name': row[0],
+                'uid': row[1],
+                'value': row[2],
+                'latitude': row[3],
+                'longitude': row[4],
+                'picture': row[5]
+            }
+            serializer = CollectibleItemSerializer(data=data)
+
+            if serializer.is_valid():
+                valid_data.append(serializer)
+            else: invalid_data.append(list(row))
+
+            for serializer in valid_data:
+                serializer.save()
+                return Response({'created': len(valid_data), 'invalid_data': invalid_data},status=status.HTTP_201_CREATED)
+
+        return Response('Ok', status=status.HTTP_200_OK)
