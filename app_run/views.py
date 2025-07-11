@@ -230,19 +230,15 @@ class PositionViewSet(viewsets.ModelViewSet):
         items = CollectibleItem.objects.all()
 
         coordinate_athlete = (position.latitude, position.longitude)
-        print(f'COOR_ATH: {coordinate_athlete}')
 
         for item in items:
             item_coordinate = (item.latitude, item.longitude)
-            print(f'ITEM_ATH: {item_coordinate}')
+
             distance_m = geodesic(coordinate_athlete, item_coordinate).meters
-            print(f'**::{distance_m}')
+
             if distance_m <= 100:
                 if not item.item.filter(id=athlete.id).exists():
-                      item.item.add(athlete)
-
-
-
+                    item.item.add(athlete)
 
         return Response({'id': position.id}, status=status.HTTP_201_CREATED)
 
@@ -256,14 +252,14 @@ class UploadFileView(APIView):
     def post(self, request):
         uploaded_file = request.FILES.get('file')
 
-        #uploaded_file = load_workbook('C:/Users/pyatk/Downloads/upload_example.xlsx')
+        # uploaded_file = load_workbook('C:/Users/pyatk/Downloads/upload_example.xlsx')
 
         if uploaded_file is None:
             return Response({'error': 'File not found.'}, status=status.HTTP_400_BAD_REQUEST)
 
         file_data = load_workbook(uploaded_file)
 
-        #ws = uploaded_file.active
+        # ws = uploaded_file.active
         ws = file_data.active
         rows = list(ws.iter_rows(min_row=2, values_only=True))
 
