@@ -200,7 +200,7 @@ class ChallengeFilter(filters.FilterSet):
 
 
 class ChallengeViewSet(viewsets.ModelViewSet):
-    queryset = Challenge.objects.select_related('athlete').all()
+    queryset = Challenge.objects.select_related('athlete__user').all()
     serializer_class = ChallengeSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ChallengeFilter
@@ -215,7 +215,7 @@ class PositionFilter(filters.FilterSet):
 
 
 class PositionViewSet(viewsets.ModelViewSet):
-    queryset = Position.objects.select_related.all()
+    queryset = Position.objects.select_related('run__athlete').all()
     serializer_class = PositionSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = PositionFilter
@@ -224,6 +224,25 @@ class PositionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         position = serializer.save()
+
+        athlete = position.run.athlete
+
+        items = CollectibleItem.objects.all()
+
+        coordinate_athlete = (position.latitude, position.longitude)
+        print(f'COOR_ATH: {coordinate_athlete}')
+
+        for item in items:
+            item_coordinate = (item.latitude, item.longitude)
+            print(f'ITEM_ATH: {item_coordinate}')
+            distance_m = geodesic(coordinate_athlete, item_coordinate).meters
+            print(f'**::{distance_m}')
+            if distance_m <= 100:
+                if not item.item.filter(id=athlete.id).exists():
+                      item.item.add(athlete)
+
+
+
 
         return Response({'id': position.id}, status=status.HTTP_201_CREATED)
 

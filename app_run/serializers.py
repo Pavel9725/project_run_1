@@ -6,7 +6,7 @@ from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleIte
 class CollectibleItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CollectibleItem
-        fields = ('name', 'uid', 'value', 'latitude', 'longitude', 'picture')
+        fields = ('id', 'name', 'uid', 'value', 'latitude', 'longitude', 'picture')
 
 
 # serializer to api/runs nested serializer
@@ -64,7 +64,7 @@ class ChallengeSerializer(serializers.ModelSerializer):
 
 
 class PositionSerializer(serializers.ModelSerializer):
-    run = serializers.PrimaryKeyRelatedField(queryset=Run.objects.all())
+    run = serializers.PrimaryKeyRelatedField(queryset=Run.objects.all().select_related('athlete'))
     latitude = serializers.FloatField(required=True)
     longitude = serializers.FloatField(required=True)
 
