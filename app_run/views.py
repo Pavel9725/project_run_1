@@ -226,19 +226,17 @@ class PositionViewSet(viewsets.ModelViewSet):
         position = serializer.save()
 
         athlete = position.run.athlete
-        coordinate_athlete = (position.longitude, position.latitude)
+        coordinate_athlete = (position.latitude, position.longitude)
 
         items = CollectibleItem.objects.all()
 
         for item in items:
-            coordinate_item = (item.longitude, item.latitude)
+            coordinate_item = (item.latitude, item.longitude)
             distance_m  = geodesic(coordinate_athlete, coordinate_item).meters
 
             if distance_m <= 100:
                 if not item.collected_by.filter(id=athlete.id).exists():
                     item.collected_by.add(athlete)
-
-
 
         return Response({'id': position.id}, status=status.HTTP_201_CREATED)
 
