@@ -18,14 +18,13 @@ class UserBasicSerializers(serializers.ModelSerializer):
 
 class RunSerializer(serializers.ModelSerializer):
     athlete_data = UserBasicSerializers(read_only=True, source='athlete')
-    run_time_seconds = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Run
-        fields = ('id','created_at', 'athlete', 'comment', 'status', 'distance', 'athlete_data', 'run_time_seconds')
+        fields = ('id','created_at', 'athlete', 'comment', 'status', 'distance', 'athlete_data')
 
-    def get_run_time_seconds(self, obj):
-        return obj.run_time.total_seconds()
+
 
 
 # serializer to api/users
