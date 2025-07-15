@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
-from geopy.distance import geodesic
+from django.utils import timezone
 
 
 class Run(models.Model):
@@ -15,6 +15,8 @@ class Run(models.Model):
     comment = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='init')
     distance = models.FloatField(blank=True, null=True)
+    run_time_seconds = models.IntegerField(null=True, blank=True)
+
 
     def __str__(self):
         return f'athlete_id: {self.athlete.id} id:{self.id} {self.status}'
@@ -41,6 +43,7 @@ class Position(models.Model):
     run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='positions')
     latitude = models.DecimalField(max_digits=7, decimal_places=4, default=0)
     longitude = models.DecimalField(max_digits=8, decimal_places=4, default=0)
+    date_time = models.DateTimeField()
 
 
 class CollectibleItem(models.Model):

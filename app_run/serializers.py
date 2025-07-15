@@ -67,10 +67,11 @@ class PositionSerializer(serializers.ModelSerializer):
     run = serializers.PrimaryKeyRelatedField(queryset=Run.objects.all().select_related('athlete'))
     latitude = serializers.FloatField(required=True)
     longitude = serializers.FloatField(required=True)
+    date_time = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S.%f')
 
     class Meta:
         model = Position
-        fields = ('run', 'latitude', 'longitude')
+        fields = ('run', 'latitude', 'longitude', 'date_time')
 
     def validate_run(self, value):
         if value.status != 'in_progress':

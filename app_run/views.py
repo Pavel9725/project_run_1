@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers import serialize
-from django.db.models import Sum
+from django.db.models import Sum, Min, Max
 from django.shortcuts import get_object_or_404
 from django_filters import NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -114,6 +114,7 @@ class StopRunView(APIView):
             athlete_info = user.athlete_info
         except ObjectDoesNotExist:
             athlete_info = AthleteInfo.objects.create(user=user)
+
 
         finished_run_count = Run.objects.filter(athlete=user, status='finished').count()
 
@@ -225,6 +226,7 @@ class PositionViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         position = serializer.save()
 
+
         athlete = position.run.athlete
         coordinate_athlete = (position.latitude, position.longitude)
 
@@ -237,6 +239,21 @@ class PositionViewSet(viewsets.ModelViewSet):
             if distance_m <= 100:
                 if not item.collected_by.filter(id=athlete.id).exists():
                     item.collected_by.add(athlete)
+
+        run = position.run
+        run_agg = run.positions.aggregate(
+            min_time=Min('date_time'),
+            max_time=Max('date_time')
+        )
+        min_time = run_agg['min_time']
+        max_time = run_agg['max_time']
+
+        if min_time and max_time:
+            run_time = max_time - min_time
+            run.run_time_seconds = int(run_time.total_seconds())
+            run.save()
+
+
 
         return Response({'id': position.id}, status=status.HTTP_201_CREATED)
 
