@@ -1,10 +1,11 @@
 from gc import get_objects
+from pkgutil import resolve_name
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers import serialize
-from django.db.models import Sum, Min, Max, Count, Q
+from django.db.models import Sum, Min, Max, Count, Q, Avg
 from django.shortcuts import get_object_or_404
 from django_filters import NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -52,7 +53,8 @@ class RunViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.filter(is_superuser=False).annotate(runs_finished=Count('runs', filter=Q(runs__status='finished')))  # Исключаем передачу суперпользователей
+    queryset = User.objects.filter(is_superuser=False).annotate(
+        runs_finished=Count('runs', filter=Q(runs__status='finished')))  # Исключаем передачу суперпользователей
     serializer_class = UserSerializers
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['first_name', 'last_name']
@@ -115,7 +117,6 @@ class StopRunView(APIView):
         except ObjectDoesNotExist:
             athlete_info = AthleteInfo.objects.create(user=user)
 
-
         finished_run_count = Run.objects.filter(athlete=user, status='finished').count()
 
         if finished_run_count == 10:
@@ -132,7 +133,7 @@ class StopRunView(APIView):
         return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
 
 
-# METHOD_2: @api_view(['POST'])
+#METHOD_2: @api_view(['POST'])
 @api_view(['POST'])
 def start_run_view(request, run_id):
     run = get_object_or_404(Run, id=run_id)
@@ -224,8 +225,8 @@ class PositionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
         position = serializer.save()
-
 
         athlete = position.run.athlete
         coordinate_athlete = (position.latitude, position.longitude)
@@ -234,7 +235,7 @@ class PositionViewSet(viewsets.ModelViewSet):
 
         for item in items:
             coordinate_item = (item.latitude, item.longitude)
-            distance_m  = geodesic(coordinate_athlete, coordinate_item).meters
+            distance_m = geodesic(coordinate_athlete, coordinate_item).meters
 
             if distance_m <= 100:
                 if not item.collected_by.filter(id=athlete.id).exists():
@@ -253,9 +254,13 @@ class PositionViewSet(viewsets.ModelViewSet):
             run.run_time_seconds = int(run_time.total_seconds())
             run.save()
 
-
-
         return Response({'id': position.id}, status=status.HTTP_201_CREATED)
+
+    def perform_create(self, serializer):
+        position = serializer.save()
+
+
+
 
 
 class CollectibleItemViewSet(viewsets.ModelViewSet):

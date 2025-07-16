@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.utils import timezone
 
 
 class Run(models.Model):
@@ -16,6 +15,7 @@ class Run(models.Model):
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='init')
     distance = models.FloatField(blank=True, null=True)
     run_time_seconds = models.IntegerField(null=True, blank=True)
+    average_speed = models.FloatField(blank=True, null=True)
 
 
     def __str__(self):
@@ -44,6 +44,8 @@ class Position(models.Model):
     latitude = models.DecimalField(max_digits=7, decimal_places=4, default=0)
     longitude = models.DecimalField(max_digits=8, decimal_places=4, default=0)
     date_time = models.DateTimeField()
+    speed = models.FloatField(blank=True, null=True)
+    distance = models.FloatField(blank=True, null=True)
 
 
 class CollectibleItem(models.Model):
