@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers import serialize
-from django.db.models import Sum, Min, Max
+from django.db.models import Sum, Min, Max, Count, Q
 from django.shortcuts import get_object_or_404
 from django_filters import NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -52,7 +52,7 @@ class RunViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.filter(is_superuser=False)  # Исключаем передачу суперпользователей
+    queryset = User.objects.filter(is_superuser=False).annotate(runs_finished=Count('runs', filter=Q(runs__status='finished')))  # Исключаем передачу суперпользователей
     serializer_class = UserSerializers
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['first_name', 'last_name']

@@ -29,7 +29,7 @@ class RunSerializer(serializers.ModelSerializer):
 # serializer to api/users
 class UserSerializers(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()  # type - вычисляемое поле
-    runs_finished = serializers.SerializerMethodField()
+    runs_finished = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = User
@@ -39,8 +39,6 @@ class UserSerializers(serializers.ModelSerializer):
     def get_type(self, obj):
         return 'coach' if obj.is_staff else 'athlete'
 
-    def get_runs_finished(self, obj):
-        return obj.runs.filter(status='finished').count()
 
 
 class UserCollectibleItemSerializers(UserSerializers):
