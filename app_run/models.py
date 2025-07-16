@@ -44,7 +44,7 @@ class Position(models.Model):
     latitude = models.DecimalField(max_digits=7, decimal_places=4, default=0)
     longitude = models.DecimalField(max_digits=8, decimal_places=4, default=0)
     date_time = models.DateTimeField()
-    speed = models.FloatField(blank=True, null=True)
+    speed = models.FloatField(default=0)
     distance = models.FloatField(blank=True, null=True)
 
 
