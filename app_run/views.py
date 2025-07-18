@@ -276,7 +276,7 @@ class PositionViewSet(viewsets.ModelViewSet):
 
             speed = dist / delta_sec
 
-            total_distance = position.distance + dist
+            total_distance = prev_position.distance + dist
             position.speed = round(speed, 2)
             position.distance = round(total_distance, 2)
 
