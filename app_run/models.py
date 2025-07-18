@@ -13,7 +13,6 @@ class Run(models.Model):
     athlete = models.ForeignKey(User, on_delete=models.CASCADE, related_name='runs')
     comment = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='init')
-    distance = models.FloatField(blank=True, null=True)
     run_time_seconds = models.IntegerField(null=True, blank=True)
     average_speed = models.FloatField(blank=True, null=True)
 

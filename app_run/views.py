@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers import serialize
 from django.db.models import Sum, Min, Max, Count, Q, Avg
+from django.db.models.signals import post_init
 from django.shortcuts import get_object_or_404
 from django_filters import NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -259,7 +260,26 @@ class PositionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         position = serializer.save()
 
+        run = position.run
 
+        prev_position = run.positions.filter(date_time__lt=position.date_time).last()
+
+        coordinate_prev = (prev_position.latitude, prev_position.longitude)
+        coordinate_curr = (position.latitude, position.longitude)
+        dist = geodesic(coordinate_prev, coordinate_curr).meters
+
+        delta_sec = (prev_position.date_time - position.date_time).total_seconds()
+
+        speed = dist / delta_sec
+
+        total_distance = position.distance + dist
+        position.speed = round(speed, 2)
+        position.distance = round(total_distance, 2)
+
+        position.save(update_fields=['speed', 'distance'])
+
+        average_speed = round((run.positions.aggregate(average_speed=Avg('speed'))['average_speed'] or 0), 2)
+        run.save(update_fields=['average_speed'])
 
 
 
