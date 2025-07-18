@@ -284,7 +284,8 @@ class PositionViewSet(viewsets.ModelViewSet):
 
         position.save(update_fields=['speed', 'distance'])
 
-        average_speed = round((run.positions.aggregate(speed=Avg('speed'))['speed'] or 0), 2)
+        average_speed = round((run.positions.aggregate(average_speed=Avg('speed'))['average_speed'] or 0), 2)
+        run.speed = average_speed
         run.save(update_fields=['speed'])
 
         return position
