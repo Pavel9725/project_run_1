@@ -226,8 +226,8 @@ class PositionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        position = serializer.save()
+        position = self.perform_create(serializer)
+
 
         athlete = position.run.athlete
         coordinate_athlete = (position.latitude, position.longitude)
@@ -253,9 +253,9 @@ class PositionViewSet(viewsets.ModelViewSet):
         if min_time and max_time:
             run_time = max_time - min_time
             run.run_time_seconds = int(run_time.total_seconds())
-            run.save()
-
-        return Response({'id': position.id}, status=status.HTTP_201_CREATED)
+            run.save(update_fields=['run_time_seconds'])
+        run_serializer = RunSerializer(run)
+        return Response(run_serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
         position = serializer.save()
@@ -286,6 +286,8 @@ class PositionViewSet(viewsets.ModelViewSet):
 
         average_speed = round((run.positions.aggregate(average_speed=Avg('speed'))['average_speed'] or 0), 2)
         run.save(update_fields=['average_speed'])
+
+        return position
 
 
 
