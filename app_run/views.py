@@ -273,10 +273,10 @@ class PositionViewSet(viewsets.ModelViewSet):
             dist = geodesic(coordinate_prev, coordinate_curr).meters
 
             delta_sec = (position.date_time - prev_position.date_time).total_seconds()
-
+            dist_km = dist / 1000
             speed = dist / delta_sec if delta_sec > 0 else 0.0
 
-            total_distance = prev_position.distance + dist
+            total_distance = prev_position.distance + dist_km
             position.speed = round(speed, 2)
             position.distance = round(total_distance, 2)
 
