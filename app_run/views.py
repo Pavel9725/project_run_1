@@ -274,11 +274,13 @@ class PositionViewSet(viewsets.ModelViewSet):
 
             delta_sec = (position.date_time - prev_position.date_time).total_seconds()
 
-            speed = dist / delta_sec
+            speed = dist / delta_sec if delta_sec > 0 else 0.0
 
             total_distance = prev_position.distance + dist
             position.speed = round(speed, 2)
             position.distance = round(total_distance, 2)
+
+
 
         position.save(update_fields=['speed', 'distance'])
 
