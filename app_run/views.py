@@ -264,17 +264,21 @@ class PositionViewSet(viewsets.ModelViewSet):
 
         prev_position = run.positions.filter(date_time__lt=position.date_time).last()
 
-        coordinate_prev = (prev_position.latitude, prev_position.longitude)
-        coordinate_curr = (position.latitude, position.longitude)
-        dist = geodesic(coordinate_prev, coordinate_curr).meters
+        if prev_position is None:
+            position.speed = 0.0
+            position.distance = 0.0
+        else:
+            coordinate_prev = (prev_position.latitude, prev_position.longitude)
+            coordinate_curr = (position.latitude, position.longitude)
+            dist = geodesic(coordinate_prev, coordinate_curr).meters
 
-        delta_sec = (position.date_time - prev_position.date_time).total_seconds()
+            delta_sec = (position.date_time - prev_position.date_time).total_seconds()
 
-        speed = dist / delta_sec
+            speed = dist / delta_sec
 
-        total_distance = position.distance + dist
-        position.speed = round(speed, 2)
-        position.distance = round(total_distance, 2)
+            total_distance = position.distance + dist
+            position.speed = round(speed, 2)
+            position.distance = round(total_distance, 2)
 
         position.save(update_fields=['speed', 'distance'])
 
