@@ -268,7 +268,7 @@ class PositionViewSet(viewsets.ModelViewSet):
         coordinate_curr = (position.latitude, position.longitude)
         dist = geodesic(coordinate_prev, coordinate_curr).meters
 
-        delta_sec = (prev_position.date_time - position.date_time).total_seconds()
+        delta_sec = (position.date_time - prev_position.date_time).total_seconds()
 
         speed = dist / delta_sec
 
