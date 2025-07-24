@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
+from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem, Subscribe
 
 
 class CollectibleItemSerializer(serializers.ModelSerializer):
@@ -21,9 +21,8 @@ class RunSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Run
-        fields = ('id','created_at', 'athlete', 'comment', 'status', 'distance', 'athlete_data', 'run_time_seconds', 'speed')
-
-
+        fields = ('id', 'created_at', 'athlete', 'comment', 'status', 'distance', 'athlete_data', 'run_time_seconds',
+                  'speed')
 
 
 # serializer to api/users
@@ -36,9 +35,9 @@ class UserSerializers(serializers.ModelSerializer):
         fields = ('id', 'date_joined', 'username', 'last_name', 'first_name', 'type', 'runs_finished')
 
         # Метод для вычисления поля type
+
     def get_type(self, obj):
         return 'coach' if obj.is_staff else 'athlete'
-
 
 
 class UserCollectibleItemSerializers(UserSerializers):
@@ -87,6 +86,5 @@ class PositionSerializer(serializers.ModelSerializer):
         if float(value) < -180.0 or float(value) > 180.0:
             raise serializers.ValidationError("Долгота должна находиться в диапазоне от -180.0 до +180.0 градусов")
         return value
-
 
 

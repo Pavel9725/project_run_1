@@ -17,7 +17,6 @@ class Run(models.Model):
     run_time_seconds = models.IntegerField(null=True, blank=True)
     speed = models.FloatField(blank=True, null=True)
 
-
     def __str__(self):
         return f'athlete_id: {self.athlete.id} id:{self.id} {self.status}'
 
@@ -56,3 +55,11 @@ class CollectibleItem(models.Model):
     longitude = models.DecimalField(max_digits=7, decimal_places=4)
     picture = models.URLField()
     collected_by = models.ManyToManyField(User, related_name='collectible_items', blank=True)
+
+
+class Subscribe(models.Model):
+    coach = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscribe_coach')
+    athlete = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscribe_athlete')
+
+    class Meta:
+        unique_together = ('coach', 'athlete')

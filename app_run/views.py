@@ -21,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
+from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem, Subscribe
 from app_run.serializers import RunSerializer, UserSerializers, AthleteInfoViewSerializer, ChallengeSerializer, \
     PositionSerializer, CollectibleItemSerializer, UserCollectibleItemSerializers
 
@@ -339,3 +339,10 @@ class UploadFileView(APIView):
         for serializer in valid_data:
             serializer.save()
         return Response(invalid_data, status=status.HTTP_200_OK)
+
+
+class SubscribeToCoachView(APIView):
+    def post(self, request, id):
+
+
+
