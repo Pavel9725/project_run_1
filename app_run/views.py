@@ -23,7 +23,8 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem, Subscribe
 from app_run.serializers import RunSerializer, UserSerializers, AthleteInfoViewSerializer, ChallengeSerializer, \
-    PositionSerializer, CollectibleItemSerializer, UserCollectibleItemSerializers
+    PositionSerializer, CollectibleItemSerializer, UserAthleteCollectibleItemSerializers, \
+    UserCoachCollectibleItemSerializers
 
 
 @api_view(['GET'])
@@ -75,7 +76,11 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return UserSerializers
         elif self.action == 'retrieve':
-            return UserCollectibleItemSerializers
+            user = self.get_object()
+            if user.is_staff:
+                return UserCoachCollectibleItemSerializers
+            else:
+                return UserAthleteCollectibleItemSerializers
         return super().get_serializer_class()
 
 
@@ -135,11 +140,10 @@ class StopRunView(APIView):
             if not Challenge.objects.filter(full_name='2 километра за 10 минут!', athlete=athlete_info).exists():
                 Challenge.objects.create(full_name='2 километра за 10 минут!', athlete=athlete_info)
 
-
         return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
 
 
-#METHOD_2: @api_view(['POST'])
+# METHOD_2: @api_view(['POST'])
 @api_view(['POST'])
 def start_run_view(request, run_id):
     run = get_object_or_404(Run, id=run_id)
@@ -233,7 +237,6 @@ class PositionViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         position = self.perform_create(serializer)
 
-
         athlete = position.run.athlete
         coordinate_athlete = (position.latitude, position.longitude)
 
@@ -285,8 +288,6 @@ class PositionViewSet(viewsets.ModelViewSet):
             position.speed = round(speed, 2)
             position.distance = round(total_distance, 2)
 
-
-
         position.save(update_fields=['speed', 'distance'])
 
         average_speed = round((run.positions.aggregate(average_speed=Avg('speed'))['average_speed'] or 0), 2)
@@ -294,7 +295,6 @@ class PositionViewSet(viewsets.ModelViewSet):
         run.save(update_fields=['speed'])
 
         return position
-
 
 
 class CollectibleItemViewSet(viewsets.ModelViewSet):
@@ -343,6 +343,23 @@ class UploadFileView(APIView):
 
 class SubscribeToCoachView(APIView):
     def post(self, request, id):
+        coach = get_object_or_404(User, id=id)
 
+        if not coach.is_staff:
+            return Response({'detail': 'User not coach!'}, status=status.HTTP_400_BAD_REQUEST)
 
+        athlete_id = request.data.get('athlete')
+        if athlete_id is None:
+            return Response({'detail': 'User id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            athlete = User.objects.get(id=athlete_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Athlete not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if Subscribe.objects.filter(coach=coach, athlete=athlete).exists():
+            return Response({'detail': 'Subscription already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        Subscribe.objects.create(coach=coach, athlete=athlete)
+
+        return Response({'detail': 'Subscribed successfully'}, status=status.HTTP_200_OK)

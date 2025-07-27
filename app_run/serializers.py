@@ -40,12 +40,32 @@ class UserSerializers(serializers.ModelSerializer):
         return 'coach' if obj.is_staff else 'athlete'
 
 
-class UserCollectibleItemSerializers(UserSerializers):
+class UserAthleteCollectibleItemSerializers(UserSerializers):
     items = CollectibleItemSerializer(many=True, source='collectible_items')
+    coach = serializers.SerializerMethodField(read_only=True)
 
     class Meta(UserSerializers.Meta):
         model = User
-        fields = UserSerializers.Meta.fields + ('items',)
+        fields = UserSerializers.Meta.fields + ('items', 'coach')
+
+    def get_coach(self, instance):
+        subscribe = instance.subscribe_coach.first()
+        if subscribe:
+            return subscribe.coach_id
+        return None
+
+
+class UserCoachCollectibleItemSerializers(UserSerializers):
+    items = CollectibleItemSerializer(many=True, source='collectible_items')
+    athletes = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(UserSerializers.Meta):
+        model = User
+        fields = UserSerializers.Meta.fields + ('items', 'athletes')
+
+    def get_athletes(self, instance):
+        subscribes = instance.subscribe_athlete.all()
+        return list(sub.athlete_id for sub in subscribes)
 
 
 class AthleteInfoViewSerializer(serializers.ModelSerializer):
@@ -86,5 +106,3 @@ class PositionSerializer(serializers.ModelSerializer):
         if float(value) < -180.0 or float(value) > 180.0:
             raise serializers.ValidationError("Долгота должна находиться в диапазоне от -180.0 до +180.0 градусов")
         return value
-
-
