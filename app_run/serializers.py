@@ -49,7 +49,7 @@ class UserAthleteCollectibleItemSerializers(UserSerializers):
         fields = UserSerializers.Meta.fields + ('items', 'coach')
 
     def get_coach(self, instance):
-        subscribe = instance.subscribe_coach.first()
+        subscribe = instance.subscribe_athlete.first()
         if subscribe:
             return subscribe.coach_id
         return None
@@ -64,7 +64,7 @@ class UserCoachCollectibleItemSerializers(UserSerializers):
         fields = UserSerializers.Meta.fields + ('items', 'athletes')
 
     def get_athletes(self, instance):
-        subscribes = instance.subscribe_athlete.all()
+        subscribes = instance.subscribe_coach.all()
         return list(sub.athlete_id for sub in subscribes)
 
 

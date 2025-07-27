@@ -351,7 +351,6 @@ class SubscribeToCoachView(APIView):
         athlete_id = request.data.get('athlete')
         if athlete_id is None:
             return Response({'detail': 'User id is required'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             athlete = User.objects.get(id=athlete_id)
         except User.DoesNotExist:
