@@ -360,6 +360,9 @@ class SubscribeToCoachView(APIView):
         if Subscribe.objects.filter(coach=coach, athlete=athlete).exists():
             return Response({'detail': 'Subscription already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-        Subscribe.objects.create(coach=coach, athlete=athlete)
+        if athlete.is_staff:
+            return Response({'detail': 'Coach not subscribe!'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            Subscribe.objects.create(coach=coach, athlete=athlete)
 
         return Response({'detail': 'Subscribed successfully'}, status=status.HTTP_200_OK)
