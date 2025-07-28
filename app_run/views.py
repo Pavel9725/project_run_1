@@ -24,7 +24,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem, Subscribe
 from app_run.serializers import RunSerializer, UserSerializers, AthleteInfoViewSerializer, ChallengeSerializer, \
     PositionSerializer, CollectibleItemSerializer, UserAthleteCollectibleItemSerializers, \
-    UserCoachCollectibleItemSerializers
+    UserCoachCollectibleItemSerializers, ChallengesSummarySerializer, AthleteSummarySerializer
 
 
 @api_view(['GET'])
@@ -365,3 +365,20 @@ class SubscribeToCoachView(APIView):
             Subscribe.objects.create(coach=coach, athlete=athlete)
 
         return Response({'detail': 'Subscribed successfully'}, status=status.HTTP_200_OK)
+
+
+class ChallengesSummaryAPIView(APIView):
+    def get(self, request):
+        challenge_names = Challenge.objects.values_list('full_name', flat=True).distinct()
+        athletes_qs = AthleteInfo.objects.select_related('user')
+
+        result = []
+
+        for ch in challenge_names:
+            athletes_for_challenge = athletes_qs.filter(challenges__full_name=ch).distinct()
+            athletes_serializer = AthleteSummarySerializer(athletes_for_challenge, many=True).data
+            result.append({
+                'name_to_display' : ch,
+                'athletes': athletes_serializer
+            })
+        return Response(result)

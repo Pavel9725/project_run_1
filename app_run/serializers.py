@@ -106,3 +106,25 @@ class PositionSerializer(serializers.ModelSerializer):
         if float(value) < -180.0 or float(value) > 180.0:
             raise serializers.ValidationError("Долгота должна находиться в диапазоне от -180.0 до +180.0 градусов")
         return value
+
+class AthleteSummarySerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='user.id')
+    full_name = serializers.SerializerMethodField(read_only=True)
+    username = serializers.CharField(source='user.username')
+
+
+    class Meta:
+        model = AthleteInfo
+        fields = ('id', 'full_name', 'username')
+
+    def get_full_name(self, instance):
+        return f'{instance.user.first_name} {instance.user.last_name}'
+
+class ChallengesSummarySerializer(serializers.Serializer):
+    name_to_display = serializers.CharField()
+    athletes = AthleteSummarySerializer(many=True)
+
+
+
+
+
