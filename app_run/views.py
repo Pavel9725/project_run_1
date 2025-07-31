@@ -391,6 +391,14 @@ class RateCoachView(APIView):
             return Response({'detail': 'User not coach!'}, status=status.HTTP_400_BAD_REQUEST)
         if athlete_id is None:
             return Response({'detail': 'User id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if rating is None:
+            return Response({'detail': 'Rating is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            rating = int(rating)
+        except (ValueError, TypeError):
+            return Response({'detail': 'Rating must be an integer'}, status=status.HTTP_400_BAD_REQUEST)
+
         if rating < 1 or rating > 5:
             return Response({'detail': 'Rating must be between 1 and 5!'}, status=status.HTTP_400_BAD_REQUEST)
 
