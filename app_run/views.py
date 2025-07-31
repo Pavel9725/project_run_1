@@ -1,12 +1,7 @@
-from gc import get_objects
-from pkgutil import resolve_name
-
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.serializers import serialize
 from django.db.models import Sum, Min, Max, Count, Q, Avg
-from django.db.models.signals import post_init
 from django.shortcuts import get_object_or_404
 from django_filters import NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,12 +14,12 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ReadOnlyModelViewSet
+
 
 from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem, Subscribe
 from app_run.serializers import RunSerializer, UserSerializers, AthleteInfoViewSerializer, ChallengeSerializer, \
     PositionSerializer, CollectibleItemSerializer, UserAthleteCollectibleItemSerializers, \
-    UserCoachCollectibleItemSerializers, ChallengesSummarySerializer, AthleteSummarySerializer
+    UserCoachCollectibleItemSerializers, AthleteSummarySerializer
 
 
 @api_view(['GET'])
@@ -56,7 +51,9 @@ class RunViewSet(viewsets.ModelViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(is_superuser=False).annotate(
-        runs_finished=Count('runs', filter=Q(runs__status='finished')))  # Исключаем передачу суперпользователей
+        runs_finished=Count('runs', filter=Q(runs__status='finished')),
+        rating=Avg('subscribe_coach__rating')
+    )
     serializer_class = UserSerializers
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['first_name', 'last_name']
@@ -378,7 +375,39 @@ class ChallengesSummaryAPIView(APIView):
             athletes_for_challenge = athletes_qs.filter(challenges__full_name=ch).distinct()
             athletes_serializer = AthleteSummarySerializer(athletes_for_challenge, many=True).data
             result.append({
-                'name_to_display' : ch,
+                'name_to_display': ch,
                 'athletes': athletes_serializer
             })
         return Response(result)
+
+
+class RateCoachView(APIView):
+    def post(self, request, coach_id):
+        coach = get_object_or_404(User, id=coach_id)
+        athlete_id = request.data.get('athlete')
+        rating = request.data.get('rating')
+
+        if not coach.is_staff:
+            return Response({'detail': 'User not coach!'}, status=status.HTTP_400_BAD_REQUEST)
+        if athlete_id is None:
+            return Response({'detail': 'User id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if rating < 1 or rating > 5:
+            return Response({'detail': 'Rating must be between 1 and 5!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            athlete = User.objects.get(id=athlete_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'Athlete not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if athlete.is_staff:
+            return Response({'detail': 'Coach not subscribe!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            subscription = Subscribe.objects.get(coach=coach, athlete=athlete)
+        except Subscribe.DoesNotExist:
+            return Response({'detail': 'Athlete must be subscribe to coach to rate'}, status=status.HTTP_400_BAD_REQUEST)
+
+        subscription.rating = rating
+        subscription.save()
+
+        return Response({'detail': 'Subscribed successfully'}, status=status.HTTP_200_OK)

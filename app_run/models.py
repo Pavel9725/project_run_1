@@ -60,6 +60,7 @@ class CollectibleItem(models.Model):
 class Subscribe(models.Model):
     coach = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscribe_coach')
     athlete = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscribe_athlete')
+    rating = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         unique_together = ('coach', 'athlete')

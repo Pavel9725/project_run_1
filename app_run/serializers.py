@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem, Subscribe
+from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 
 
 class CollectibleItemSerializer(serializers.ModelSerializer):
@@ -29,10 +29,11 @@ class RunSerializer(serializers.ModelSerializer):
 class UserSerializers(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()  # type - вычисляемое поле
     runs_finished = serializers.IntegerField(read_only=True)
+    rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = User
-        fields = ('id', 'date_joined', 'username', 'last_name', 'first_name', 'type', 'runs_finished')
+        fields = ('id', 'date_joined', 'username', 'last_name', 'first_name', 'type', 'runs_finished', 'rating')
 
         # Метод для вычисления поля type
 
@@ -120,9 +121,6 @@ class AthleteSummarySerializer(serializers.ModelSerializer):
     def get_full_name(self, instance):
         return f'{instance.user.first_name} {instance.user.last_name}'
 
-class ChallengesSummarySerializer(serializers.Serializer):
-    name_to_display = serializers.CharField()
-    athletes = AthleteSummarySerializer(many=True)
 
 
 
