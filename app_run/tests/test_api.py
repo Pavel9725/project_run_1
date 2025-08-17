@@ -69,3 +69,19 @@ class UserApiTestCase(APITestCase):
         serializer_data = UserSerializer([self.athlete_3,], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
+
+class UserRunApiTestCase(APITestCase):
+    def setUp(self):
+        self.superuser = User.objects.create_superuser(username='Admin', is_superuser=True, is_staff=True)
+        self.athlete_1 = User.objects.create(username='Kristina', is_staff=True, is_superuser=False)
+        self.athlete_2 = User.objects.create(username='Miha', is_staff=True, is_superuser=False)
+        self.athlete_3 = User.objects.create(username='Pavel', is_staff=False, is_superuser=False)
+
+    def test_get_excluding_superuser(self):
+        url = reverse('api-users-list')
+        response = self.client.get(url)
+        expected_users = [self.athlete_1, self.athlete_2, self.athlete_3]
+        response_data = response.data
+        for user_response, user_obj in zip(response_data, expected_users):
+            self.assertEqual(user_response['id'], user_obj.id)
+            self.assertEqual(user_response['username'], user_obj.username)
