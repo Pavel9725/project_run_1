@@ -19,7 +19,7 @@ def view_about(request):
 
 
 class RunViewSet(viewsets.ModelViewSet):
-    queryset = Run.objects.all().select_related('athlete')
+    queryset = Run.objects.all()
     serializer_class = RunSerializer
 
 
