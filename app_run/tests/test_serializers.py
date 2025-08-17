@@ -22,37 +22,39 @@ class RunSerializerTestCase(TestCase):
                 'athlete': self.athlete_1.id,
                 'comment': '',
                 'created_at': self.run_1.created_at.isoformat().replace('+00:00', 'Z'),
-                'athlete_data': {'id': self.athlete_1.id,
-                                 'username': 'Admin',
-                                 'last_name': '',
-                                 'first_name': ''
-                                 }
+                'athlete_data': {
+                    'id': self.athlete_1.id,
+                    'username': 'Admin',
+                    'last_name': '',
+                    'first_name': ''
+                }
             },
             {
                 'id': self.run_2.id,
                 'athlete': self.athlete_1.id,
                 'comment': 'My 2 run!',
                 'created_at': self.run_2.created_at.isoformat().replace('+00:00', 'Z'),
-                'athlete_data': {'id': self.athlete_1.id,
-                                 'username': 'Admin',
-                                 'last_name': '',
-                                 'first_name': ''
-                                 }
+                'athlete_data': {
+                    'id': self.athlete_1.id,
+                    'username': 'Admin',
+                    'last_name': '',
+                    'first_name': ''
+                }
             },
             {
                 'id': self.run_3.id,
                 'athlete': self.athlete_2.id,
                 'comment': '1 Run',
                 'created_at': self.run_3.created_at.isoformat().replace('+00:00', 'Z'),
-                'athlete_data': {'id': self.athlete_2.id,
-                                 'username': 'Kristina',
-                                 'last_name': '',
-                                 'first_name': ''
-                                 }
+                'athlete_data': {
+                    'id': self.athlete_2.id,
+                    'username': 'Kristina',
+                    'last_name': '',
+                    'first_name': ''
+                }
             },
 
         ]
-        print(f'\n\n{data}')
         self.assertEqual(data, expected_data)
 
 
