@@ -1,12 +1,10 @@
-import json
-
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from app_run.models import Run
-from app_run.serializers import RunSerializer
+from app_run.serializers import RunSerializer, UserSerializer
 
 
 class RunApiTestCase(APITestCase):
@@ -43,3 +41,31 @@ class RunApiTestCase(APITestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(Run.objects.all().count(), 5)
+
+class UserApiTestCase(APITestCase):
+    def setUp(self):
+        self.superuser = User.objects.create_superuser(username='Admin', is_superuser=True, is_staff=True)
+        self.athlete_1 = User.objects.create(username='Kristina', is_staff=True, is_superuser=False)
+        self.athlete_2 = User.objects.create(username='Miha', is_staff=True, is_superuser=False)
+        self.athlete_3 = User.objects.create(username='Pavel', is_staff=False, is_superuser=False)
+
+    def test_get_excluding_superuser(self):
+        url = reverse('api-users-list')
+        response = self.client.get(url)
+        serializer_data = UserSerializer([self.athlete_1, self.athlete_2, self.athlete_3], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_get_coach(self):
+        url = reverse('api-users-list') + '?type=coach'
+        response = self.client.get(url)
+        serializer_data = UserSerializer([self.athlete_1, self.athlete_2], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_get_athlete(self):
+        url = reverse('api-users-list') + '?type=athlete'
+        response = self.client.get(url)
+        serializer_data = UserSerializer([self.athlete_3,], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
