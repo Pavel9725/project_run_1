@@ -42,6 +42,13 @@ class RunApiTestCase(APITestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(Run.objects.all().count(), 5)
 
+    def test_delete_run(self):
+        url = reverse('api-runs-detail', args=(self.run_1.id,))
+        response = self.client.delete(url)
+        self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
+        self.assertEqual(Run.objects.all().count(), 3)
+
+
 class UserApiTestCase(APITestCase):
     def setUp(self):
         self.superuser = User.objects.create_superuser(username='Admin', is_superuser=True, is_staff=True)
