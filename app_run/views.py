@@ -1,8 +1,11 @@
 from django.contrib.auth.models import User
-from rest_framework import viewsets
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from django.conf import settings
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from app_run.models import Run
 from app_run.serializers import RunSerializer, UserSerializer
@@ -26,6 +29,8 @@ class RunViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.filter(is_superuser=False)
     serializer_class = UserSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ['first_name', 'last_name']
 
     def get_queryset(self):
         qs = self.queryset
@@ -35,3 +40,28 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         if type == 'athlete':
             qs = qs.filter(is_staff=False)
         return qs
+
+
+class RunStartAPIView(APIView):
+    def post(self, request, run_id):
+        run = get_object_or_404(Run, id=run_id)
+
+        if run.status != 'init':
+            return Response({'detail': 'Invalid run status for starting.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        run.status = 'in_progress'
+        run.save()
+
+        return Response(RunSerializer(run).data, status=status.HTTP_201_CREATED)
+
+class RunStopAPIView(APIView):
+    def post(self, request, run_id):
+        run = get_object_or_404(Run, id=run_id)
+
+        if run.status != 'in_progress':
+            return Response({'detail': 'Invalid run status for starting.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        run.status = 'finished'
+        run.save()
+
+        return Response(RunSerializer(run).data, status=status.HTTP_201_CREATED)
