@@ -10,9 +10,9 @@ class RunSerializerTestCase(TestCase):
         self.athlete_1 = User.objects.create(username='Admin')
         self.athlete_2 = User.objects.create(username='Kristina')
 
-        self.run_1 = Run.objects.create(athlete=self.athlete_1, comment='')
-        self.run_2 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!')
-        self.run_3 = Run.objects.create(athlete=self.athlete_2, comment='1 Run')
+        self.run_1 = Run.objects.create(athlete=self.athlete_1, comment='', status='init')
+        self.run_2 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='init')
+        self.run_3 = Run.objects.create(athlete=self.athlete_2, comment='1 Run', status='init')
 
     def test_ok(self):
         data = RunSerializer([self.run_1, self.run_2, self.run_3], many=True).data
@@ -27,7 +27,8 @@ class RunSerializerTestCase(TestCase):
                     'username': 'Admin',
                     'last_name': '',
                     'first_name': ''
-                }
+                },
+                'status': 'init'
             },
             {
                 'id': self.run_2.id,
@@ -39,7 +40,8 @@ class RunSerializerTestCase(TestCase):
                     'username': 'Admin',
                     'last_name': '',
                     'first_name': ''
-                }
+                },
+                'status': 'init'
             },
             {
                 'id': self.run_3.id,
@@ -51,7 +53,8 @@ class RunSerializerTestCase(TestCase):
                     'username': 'Kristina',
                     'last_name': '',
                     'first_name': ''
-                }
+                },
+                'status': 'init'
             },
 
         ]

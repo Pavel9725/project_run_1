@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from app_run.views import view_about, RunViewSet, UserViewSet
+from app_run.views import view_about, RunViewSet, UserViewSet, RunStartAPIView, RunStopAPIView
 
 router = DefaultRouter()
 router.register('api/runs', RunViewSet, basename='api-runs')
@@ -29,5 +29,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/company_details/', view_about, name='company_details'),
     path('', include(router.urls)),
+    path('api/runs/<int:run_id>/start/', RunStartAPIView.as_view(), name='api-runs-start'),
+    path('api/runs/<int:run_id>/stop/', RunStopAPIView.as_view(), name='api-runs-stop'),
+
 
 ]

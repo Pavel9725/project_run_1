@@ -1,8 +1,15 @@
 from django.contrib.auth.models import User
 from django.db import models
 
+
 class Run(models.Model):
+    STATUS_CHOICES = (
+        ('init', 'Init'),
+        ('in_progress', 'In_progress'),
+        ('finished', 'Finished'),
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     athlete = models.ForeignKey(User, on_delete=models.CASCADE)
     comment = models.TextField(blank=True, null=True)
-
+    status = models.CharField(max_length=255, choices=STATUS_CHOICES, default='init')
