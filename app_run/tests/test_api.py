@@ -16,7 +16,7 @@ class RunApiTestCase(APITestCase):
         self.run_1 = Run.objects.create(athlete=self.athlete_1, comment='', status='init')
         self.run_2 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
         self.run_3 = Run.objects.create(athlete=self.athlete_2, comment='1 Run', status='in_progress')
-        self.run_4 = Run.objects.create(athlete=self.athlete_2, comment='2 Run')
+        self.run_4 = Run.objects.create(athlete=self.athlete_2, comment='2 Run', status='in_progress')
         self.run_5 = Run.objects.create(athlete=self.athlete_2, comment='1 Run', status='init')
 
     def test_get(self):
@@ -61,14 +61,32 @@ class RunApiTestCase(APITestCase):
         run.refresh_from_db()
         self.assertEqual(run.status, 'finished')
 
-
-
     def test_delete_run(self):
         url = reverse('api-runs-detail', args=(self.run_1.id,))
         response = self.client.delete(url)
         self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
-        self.assertEqual(Run.objects.all().count(), 3)
+        self.assertEqual(Run.objects.all().count(), 4)
 
+    def test_get_filter_status(self):
+        url = reverse('api-runs-list')
+        response = self.client.get(url, data={'status': 'in_progress'})
+        serializer_data = RunSerializer([self.run_3, self.run_4], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_get_filter_athlete(self):
+        url = reverse('api-runs-list')
+        response = self.client.get(url, data={'athlete': self.athlete_2.id})
+        serializer_data = RunSerializer([self.run_3, self.run_4, self.run_5], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_get_ordering_created_at(self):
+        url = reverse('api-runs-list')
+        response = self.client.get(url, data={'ordering': 'created_at'})
+        serializer_data = RunSerializer([self.run_1, self.run_2, self.run_3, self.run_4, self.run_5], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
 
 class UserApiTestCase(APITestCase):
     def setUp(self):
