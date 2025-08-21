@@ -3,8 +3,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from app_run.models import Run
-from app_run.serializers import RunSerializer, UserSerializer
+from app_run.models import Run, AthleteInfo
+from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer
 
 
 class RunApiTestCase(APITestCase):
@@ -51,6 +51,13 @@ class RunApiTestCase(APITestCase):
         run.refresh_from_db()
         self.assertEqual(run.status, 'in_progress')
 
+    def test_create_run_start_status_not_init(self):
+        run = self.run_3
+        url = reverse('api-runs-start', args=[run.id])
+        response = self.client.post(url, format='json')
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        self.assertEqual({'detail': 'Invalid run status for starting.'}, response.data)
+
     def test_create_run_stop(self):
         run = self.run_3
         url = reverse('api-runs-stop', args=[run.id])
@@ -58,6 +65,13 @@ class RunApiTestCase(APITestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         run.refresh_from_db()
         self.assertEqual(run.status, 'finished')
+
+    def test_create_run_stop_status_not_init(self):
+        run = self.run_5
+        url = reverse('api-runs-stop', args=[run.id])
+        response = self.client.post(url, format='json')
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        self.assertEqual({'detail': 'Invalid run status for starting.'}, response.data)
 
     def test_delete_run(self):
         url = reverse('api-runs-detail', args=(self.run_1.id,))
@@ -131,6 +145,67 @@ class UserApiTestCase(APITestCase):
         self.assertEqual(serializer_data, response.data)
 
 
+class AthleteInfoTestCase(APITestCase):
+    def setUp(self):
+        self.superuser = User.objects.create_superuser(username='Admin', is_superuser=True, is_staff=True)
+        self.athlete_1 = User.objects.create(username='Kristina', is_staff=True, is_superuser=False)
+        self.athlete_2 = User.objects.create(username='Miha', first_name='Misha', last_name='Pavioshvili',
+                                             is_staff=True, is_superuser=False)
+        self.athlete_3 = User.objects.create(username='Pavel', first_name='Pavel', is_staff=False, is_superuser=False)
+
+        self.athlete_info_1 = AthleteInfo.objects.create(user=self.athlete_1, goals='', weight=62)
+        self.athlete_info_2 = AthleteInfo.objects.create(user=self.athlete_2, goals='I LOVE RUN!', weight=57)
+
+    def test_get(self):
+        url = reverse('api-athlete-info', kwargs={'user_id': self.athlete_1.id})
+        response = self.client.get(url)
+        serializer_data = AthleteInfoSerializer(self.athlete_info_1).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_put(self):
+        url = reverse('api-athlete-info', kwargs={'user_id': self.athlete_1.id})
+        data = {
+            'goals': '',
+            'weight': 62
+        }
+        response = self.client.put(url, data, format='json')
+        serializer_data = AthleteInfoSerializer(self.athlete_info_1).data
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_put_invalid_weight(self):
+        url = reverse('api-athlete-info', kwargs={'user_id': self.athlete_1.id})
+        data = {
+            'goals': '',
+            'weight': 900
+        }
+        response = self.client.put(url, data, format='json')
+        serializer_data = AthleteInfoSerializer(self.athlete_info_1).data
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        self.assertEqual({'error': 'Invalid weight!'}, response.data)
+
+    def test_put_weight_is_None(self):
+        url = reverse('api-athlete-info', kwargs={'user_id': self.athlete_1.id})
+        data = {
+            'goals': '',
+            'weight': None
+        }
+        response = self.client.put(url, data, format='json')
+        serializer_data = AthleteInfoSerializer(self.athlete_info_1).data
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        self.assertEqual({'error': 'Missing data!'}, response.data)
+
+    def test_put_weight_invalid_format_weight(self):
+        url = reverse('api-athlete-info', kwargs={'user_id': self.athlete_1.id})
+        data = {
+            'goals': '',
+            'weight': 'asde'
+        }
+        response = self.client.put(url, data, format='json')
+        serializer_data = AthleteInfoSerializer(self.athlete_info_1).data
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        self.assertEqual({'error': 'Invalid weight format!'}, response.data)
 
 
 class UserRunApiTestCase(APITestCase):

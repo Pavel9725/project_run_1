@@ -1,8 +1,8 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from app_run.models import Run
-from app_run.serializers import RunSerializer, UserSerializer, UserRunSerializer
+from app_run.models import Run, AthleteInfo
+from app_run.serializers import RunSerializer, UserSerializer, UserRunSerializer, AthleteInfoSerializer
 
 
 class RunSerializerTestCase(TestCase):
@@ -94,7 +94,6 @@ class UserSerializerTestCase(TestCase):
             },
 
         ]
-        print(f'\n\n{data}')
         self.assertEqual(data, expected_data)
 
 
@@ -120,5 +119,22 @@ class UserRunSerializerTestCase(TestCase):
                 'first_name': 'Grigorev',
             },
 
+        ]
+        self.assertEqual(data, expected_data)
+
+class AthleteInfoSerializerTestCase(TestCase):
+    def setUp(self):
+        self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina')
+        self.athlete_info_1 = AthleteInfo.objects.create(user=self.athlete_1, goals='Love Run!', weight=56)
+
+
+    def test_ok(self):
+        data = AthleteInfoSerializer([self.athlete_info_1, ], many=True).data
+        expected_data = [
+            {
+                'id': self.athlete_info_1.id,
+                'goals': 'Love Run!',
+                'weight': 56,
+            },
         ]
         self.assertEqual(data, expected_data)

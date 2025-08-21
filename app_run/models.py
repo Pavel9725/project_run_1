@@ -16,3 +16,8 @@ class Run(models.Model):
 
     def __str__(self):
         return f'Id:{self.id} athlete: {self.athlete} athlete_id: {self.athlete.id}'
+
+class AthleteInfo(models.Model):
+    goals = models.CharField(max_length=255)
+    weight = models.IntegerField(blank=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
