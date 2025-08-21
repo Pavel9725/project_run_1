@@ -67,6 +67,10 @@ class UserSerializerTestCase(TestCase):
                                              is_staff=True)
         self.athlete_2 = User.objects.create(username='Pavel', last_name='Pavel', first_name='Grigorev', is_staff=False)
 
+        self.run_1 = Run.objects.create(athlete=self.athlete_1, comment='', status='init')
+        self.run_2 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
+        self.run_3 = Run.objects.create(athlete=self.athlete_2, comment='1 Run', status='init')
+
     def test_ok(self):
         data = UserSerializer([self.athlete_1, self.athlete_2], many=True).data
         expected_data = [
@@ -76,7 +80,8 @@ class UserSerializerTestCase(TestCase):
                 'username': 'Kristina',
                 'last_name': 'Kristina',
                 'first_name': 'Pyatkina',
-                'type': 'coach'
+                'type': 'coach',
+                'runs_finished': 1
             },
             {
                 'id': self.athlete_2.id,
@@ -84,10 +89,12 @@ class UserSerializerTestCase(TestCase):
                 'username': 'Pavel',
                 'last_name': 'Pavel',
                 'first_name': 'Grigorev',
-                'type': 'athlete'
+                'type': 'athlete',
+                'runs_finished': 0
             },
 
         ]
+        print(f'\n\n{data}')
         self.assertEqual(data, expected_data)
 
 

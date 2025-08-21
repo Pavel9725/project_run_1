@@ -43,7 +43,6 @@ class RunApiTestCase(APITestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(Run.objects.all().count(), 6)
 
-
     def test_create_run_start(self):
         run = self.run_5
         url = reverse('api-runs-start', args=[run.id])
@@ -51,7 +50,6 @@ class RunApiTestCase(APITestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         run.refresh_from_db()
         self.assertEqual(run.status, 'in_progress')
-
 
     def test_create_run_stop(self):
         run = self.run_3
@@ -88,11 +86,13 @@ class RunApiTestCase(APITestCase):
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
+
 class UserApiTestCase(APITestCase):
     def setUp(self):
         self.superuser = User.objects.create_superuser(username='Admin', is_superuser=True, is_staff=True)
         self.athlete_1 = User.objects.create(username='Kristina', is_staff=True, is_superuser=False)
-        self.athlete_2 = User.objects.create(username='Miha',  first_name='Misha', last_name='Pavioshvili', is_staff=True, is_superuser=False)
+        self.athlete_2 = User.objects.create(username='Miha', first_name='Misha', last_name='Pavioshvili',
+                                             is_staff=True, is_superuser=False)
         self.athlete_3 = User.objects.create(username='Pavel', first_name='Pavel', is_staff=False, is_superuser=False)
 
     def test_get_excluding_superuser(self):
@@ -112,7 +112,7 @@ class UserApiTestCase(APITestCase):
     def test_get_athlete(self):
         url = reverse('api-users-list') + '?type=athlete'
         response = self.client.get(url)
-        serializer_data = UserSerializer([self.athlete_3,], many=True).data
+        serializer_data = UserSerializer([self.athlete_3, ], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -120,6 +120,13 @@ class UserApiTestCase(APITestCase):
         url = reverse('api-users-list')
         response = self.client.get(url, data={'search': 'Pav'})
         serializer_data = UserSerializer([self.athlete_2, self.athlete_3], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_get_ordering_date_joined(self):
+        url = reverse('api-users-list')
+        response = self.client.get(url, data={'ordering': 'date_joined'})
+        serializer_data = UserSerializer([self.athlete_1, self.athlete_2, self.athlete_3], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 

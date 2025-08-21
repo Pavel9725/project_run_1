@@ -5,6 +5,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from django.conf import settings
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -21,10 +22,18 @@ def view_about(request):
     }
     return Response(details)
 
+class RunPagination(PageNumberPagination):
+    page_size_query_param = 'size'
+    max_page_size = 50
+
+class UserPagination(PageNumberPagination):
+    page_size_query_param = 'size'
+    max_page_size = 50
 
 class RunViewSet(viewsets.ModelViewSet):
     queryset = Run.objects.all().select_related('athlete')
     serializer_class = RunSerializer
+    pagination_class = RunPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['status', 'athlete']
     ordering_fields = ['created_at']
@@ -34,8 +43,10 @@ class RunViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.filter(is_superuser=False)
     serializer_class = UserSerializer
-    filter_backends = [SearchFilter]
+    pagination_class = UserPagination
+    filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['first_name', 'last_name']
+    ordering_fields = ['date_joined']
 
     def get_queryset(self):
         qs = self.queryset
