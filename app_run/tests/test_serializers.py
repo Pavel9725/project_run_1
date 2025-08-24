@@ -1,8 +1,9 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from app_run.models import Run, AthleteInfo
-from app_run.serializers import RunSerializer, UserSerializer, UserRunSerializer, AthleteInfoSerializer
+from app_run.models import Run, AthleteInfo, Challenge
+from app_run.serializers import RunSerializer, UserSerializer, UserRunSerializer, AthleteInfoSerializer, \
+    ChallengeSerializer
 
 
 class RunSerializerTestCase(TestCase):
@@ -135,6 +136,25 @@ class AthleteInfoSerializerTestCase(TestCase):
                 'id': self.athlete_info_1.id,
                 'goals': 'Love Run!',
                 'weight': 56,
+            },
+        ]
+        self.assertEqual(data, expected_data)
+
+class ChallengeSerializerTestCase(TestCase):
+    def setUp(self):
+        self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina')
+        self.athlete_info_1 = AthleteInfo.objects.create(user=self.athlete_1, goals='Love Run!', weight=56)
+        self.challenge_1 = Challenge.objects.create(athlete=self.athlete_info_1, full_name='Сделай 10 забегов!')
+        self.run_1 = Run.objects.create(athlete=self.athlete_1, status='init')
+
+
+    def test_ok(self):
+        data = ChallengeSerializer([self.challenge_1, ], many=True).data
+        expected_data = [
+            {
+                'athlete': self.athlete_1.id,
+                'full_name': 'Сделай 10 забегов!',
+
             },
         ]
         self.assertEqual(data, expected_data)

@@ -11,8 +11,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app_run.models import Run, AthleteInfo
-from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer
+from app_run.models import Run, AthleteInfo, Challenge
+from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer, ChallengeSerializer
 
 
 @api_view(['GET'])
@@ -86,7 +86,18 @@ class RunStopAPIView(APIView):
         run.status = 'finished'
         run.save()
 
-        return Response(RunSerializer(run).data, status=status.HTTP_201_CREATED)
+        user = run.athlete
+
+        try:
+            athlete_info = user.athleteinfo
+        except AthleteInfo.DoesNotExist:
+            return Response({'detail': 'AthleteInfo not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if Run.objects.filter(athlete=user, status='finished').count() == 10:
+            if not Challenge.objects.filter(athlete=athlete_info, full_name='Сделай 10 Забегов!').exists():
+                Challenge.objects.create(athlete=athlete_info, full_name='Сделай 10 Забегов!')
+
+        return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
 
 
 class AthleteInfoView(APIView):
@@ -119,3 +130,15 @@ class AthleteInfoView(APIView):
                                                                 })
         serializer = AthleteInfoSerializer(athlete)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class ChallengeViewSet(viewsets.ModelViewSet):
+    queryset = Challenge.objects.all()
+    serializer_class = ChallengeSerializer
+
+    def get_queryset(self):
+        qs = self.queryset
+        athlete_id = self.request.query_params.get('athlete')
+        if athlete_id:
+            qs = qs.filter(athlete__id=athlete_id)
+            return qs
+        return qs

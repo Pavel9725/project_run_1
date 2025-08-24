@@ -3,8 +3,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from app_run.models import Run, AthleteInfo
-from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer
+from app_run.models import Run, AthleteInfo, Challenge
+from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer, ChallengeSerializer
 
 
 class RunApiTestCase(APITestCase):
@@ -12,17 +12,34 @@ class RunApiTestCase(APITestCase):
         self.athlete_1 = User.objects.create(username='Admin')
         self.athlete_2 = User.objects.create(username='Kristina')
         self.athlete_3 = User.objects.create(username='Pavel')
+        self.athlete_4 = User.objects.create(username='Andrey')
+
+        self.athlete_info_1 = AthleteInfo.objects.create(user=self.athlete_1)
+        self.athlete_info_2 = AthleteInfo.objects.create(user=self.athlete_2)
+        self.athlete_info_3 = AthleteInfo.objects.create(user=self.athlete_3)
 
         self.run_1 = Run.objects.create(athlete=self.athlete_1, comment='', status='init')
         self.run_2 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
         self.run_3 = Run.objects.create(athlete=self.athlete_2, comment='1 Run', status='in_progress')
         self.run_4 = Run.objects.create(athlete=self.athlete_2, comment='2 Run', status='in_progress')
         self.run_5 = Run.objects.create(athlete=self.athlete_2, comment='1 Run', status='init')
+        self.run_6 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
+        self.run_7 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
+        self.run_8 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
+        self.run_9 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
+        self.run_10 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
+        self.run_11 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
+        self.run_12 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
+        self.run_13 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
+        self.run_14 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='in_progress')
+        self.run_15 = Run.objects.create(athlete=self.athlete_4, comment='My 2 run!', status='in_progress')
 
     def test_get(self):
         url = reverse('api-runs-list')
         response = self.client.get(url)
-        serializer_data = RunSerializer([self.run_1, self.run_2, self.run_3, self.run_4, self.run_5], many=True).data
+        serializer_data = RunSerializer(
+            [self.run_1, self.run_2, self.run_3, self.run_4, self.run_5, self.run_6, self.run_7, self.run_8, self.run_9,
+             self.run_10, self.run_11, self.run_12, self.run_13, self.run_14, self.run_15], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -41,7 +58,7 @@ class RunApiTestCase(APITestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertEqual(Run.objects.all().count(), 6)
+        self.assertEqual(Run.objects.all().count(), 16)
 
     def test_create_run_start(self):
         run = self.run_5
@@ -62,9 +79,26 @@ class RunApiTestCase(APITestCase):
         run = self.run_3
         url = reverse('api-runs-stop', args=[run.id])
         response = self.client.post(url, format='json')
-        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
         run.refresh_from_db()
         self.assertEqual(run.status, 'finished')
+
+    def test_create_run_stop_create_challenge(self):
+        self.assertEqual(Challenge.objects.filter(athlete=self.athlete_info_1).count(), 0)
+        run = self.run_14
+        url = reverse('api-runs-stop', args=[run.id])
+        response = self.client.post(url, format='json')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        run.refresh_from_db()
+        self.assertEqual(run.status, 'finished')
+        self.assertEqual(Challenge.objects.filter(athlete=self.athlete_info_1).count(), 1)
+
+    def test_not_athlete_info(self):
+        run = self.run_15
+        url = reverse('api-runs-stop', args=[run.id])
+        response = self.client.post(url, format='json')
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        self.assertEqual({'detail': 'AthleteInfo not found'}, response.data)
 
     def test_create_run_stop_status_not_init(self):
         run = self.run_5
@@ -77,12 +111,12 @@ class RunApiTestCase(APITestCase):
         url = reverse('api-runs-detail', args=(self.run_1.id,))
         response = self.client.delete(url)
         self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
-        self.assertEqual(Run.objects.all().count(), 4)
+        self.assertEqual(Run.objects.all().count(), 14)
 
     def test_get_filter_status(self):
         url = reverse('api-runs-list')
         response = self.client.get(url, data={'status': 'in_progress'})
-        serializer_data = RunSerializer([self.run_3, self.run_4], many=True).data
+        serializer_data = RunSerializer([self.run_3, self.run_4, self.run_14, self.run_15], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -96,7 +130,9 @@ class RunApiTestCase(APITestCase):
     def test_get_ordering_created_at(self):
         url = reverse('api-runs-list')
         response = self.client.get(url, data={'ordering': 'created_at'})
-        serializer_data = RunSerializer([self.run_1, self.run_2, self.run_3, self.run_4, self.run_5], many=True).data
+        serializer_data = RunSerializer(
+            [self.run_1, self.run_2, self.run_3, self.run_4, self.run_5, self.run_6, self.run_7, self.run_8, self.run_9,
+             self.run_10, self.run_11, self.run_12, self.run_13, self.run_14, self.run_15], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -223,3 +259,28 @@ class UserRunApiTestCase(APITestCase):
         for user_response, user_obj in zip(response_data, expected_users):
             self.assertEqual(user_response['id'], user_obj.id)
             self.assertEqual(user_response['username'], user_obj.username)
+
+
+class ChallengeTestCase(APITestCase):
+    def setUp(self):
+        self.athlete_1 = User.objects.create(username='Kristina', is_staff=True, is_superuser=False)
+        self.athlete_2 = User.objects.create(username='Pavel', is_staff=True, is_superuser=False)
+        self.athlete_info_1 = AthleteInfo.objects.create(user=self.athlete_1, goals='', weight=62)
+        self.athlete_info_2 = AthleteInfo.objects.create(user=self.athlete_2, goals='', weight=78)
+        self.challenge_1 = Challenge.objects.create(athlete=self.athlete_info_1, full_name='Сделай 10 забегов!')
+        self.challenge_2 = Challenge.objects.create(athlete=self.athlete_info_1, full_name='Сделай 20 забегов!')
+        self.challenge_3 = Challenge.objects.create(athlete=self.athlete_info_2, full_name='Сделай 10 забегов!')
+
+    def test_get(self):
+        url = reverse('api-challenges-list')
+        response = self.client.get(url)
+        serializer_data = ChallengeSerializer([self.challenge_1, self.challenge_2, self.challenge_3], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_get_athlete(self):
+        url = reverse('api-challenges-list')
+        response = self.client.get(url, {'athlete': self.athlete_info_1.id})
+        serializer_data = ChallengeSerializer([self.challenge_1, self.challenge_2], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
