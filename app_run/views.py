@@ -1,5 +1,3 @@
-from email.policy import default
-
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,8 +9,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app_run.models import Run, AthleteInfo, Challenge
-from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer, ChallengeSerializer
+from app_run.models import Run, AthleteInfo, Challenge, Position
+from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer, ChallengeSerializer, \
+    PositionSerializer
 
 
 @api_view(['GET'])
@@ -142,3 +141,26 @@ class ChallengeViewSet(viewsets.ModelViewSet):
             qs = qs.filter(athlete__id=athlete_id)
             return qs
         return qs
+
+class PositionViewSet(viewsets.ModelViewSet):
+    queryset = Position.objects.all()
+    serializer_class = PositionSerializer
+
+    def get_queryset(self):
+        qs = Position.objects.all()
+        run_id = self.request.query_params.get('run', None)
+        if run_id:
+            qs = qs.filter(run=run_id)
+            return qs
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        position_id = serializer.data['id']
+        headers = self.get_success_headers(serializer.data)
+        return Response({'id': position_id}, status=status.HTTP_201_CREATED, headers=headers)
+
+

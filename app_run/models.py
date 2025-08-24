@@ -25,3 +25,8 @@ class AthleteInfo(models.Model):
 class Challenge(models.Model):
     full_name = models.CharField(max_length=255)
     athlete = models.ForeignKey(AthleteInfo, on_delete=models.CASCADE, related_name='challenges')
+
+class Position(models.Model):
+    run = models.IntegerField()
+    latitude = models.FloatField()
+    longitude = models.FloatField()

@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
-from rest_framework import serializers
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers, status
+from rest_framework.response import Response
 
-from app_run.models import Run, AthleteInfo, Challenge
+from app_run.models import Run, AthleteInfo, Challenge, Position
 
 
 class UserRunSerializer(serializers.ModelSerializer):
@@ -32,12 +34,36 @@ class UserSerializer(serializers.ModelSerializer):
     def get_runs_finished(self, instance):
         return instance.runs.filter(status='finished').count()
 
+
 class AthleteInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = AthleteInfo
         fields = ('id', 'goals', 'weight')
 
+
 class ChallengeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Challenge
         fields = ('athlete', 'full_name')
+
+
+class PositionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Position
+        fields = ('id','run', 'latitude', 'longitude')
+
+    def validate_run(self, value):
+        run =  get_object_or_404(Run, id=value)
+        if run.status != 'in_progress':
+            raise serializers.ValidationError('Status run must be in_progress')
+        return value
+
+    def validate_latitude(self, value):
+        if not (-90 <= value <= 90):
+            raise serializers.ValidationError('Latitude must be between -90 and 90!')
+        return round(value, 4)
+
+    def validate_longitude(self, value):
+        if not (-180 <= value <= 180):
+            raise serializers.ValidationError('Longitude must be between -180 and 180!')
+        return round(value, 4)

@@ -19,12 +19,13 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from app_run.views import view_about, RunViewSet, UserViewSet, RunStartAPIView, RunStopAPIView, AthleteInfoView, \
-    ChallengeViewSet
+    ChallengeViewSet, PositionViewSet
 
 router = DefaultRouter()
 router.register('api/runs', RunViewSet, basename='api-runs')
 router.register('api/users', UserViewSet, basename='api-users')
 router.register('api/challenges', ChallengeViewSet, basename='api-challenges')
+router.register('api/positions', PositionViewSet, basename='api-positions')
 
 
 urlpatterns = [

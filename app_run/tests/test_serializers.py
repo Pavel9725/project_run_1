@@ -1,9 +1,9 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from app_run.models import Run, AthleteInfo, Challenge
+from app_run.models import Run, AthleteInfo, Challenge, Position
 from app_run.serializers import RunSerializer, UserSerializer, UserRunSerializer, AthleteInfoSerializer, \
-    ChallengeSerializer
+    ChallengeSerializer, PositionSerializer
 
 
 class RunSerializerTestCase(TestCase):
@@ -123,11 +123,11 @@ class UserRunSerializerTestCase(TestCase):
         ]
         self.assertEqual(data, expected_data)
 
+
 class AthleteInfoSerializerTestCase(TestCase):
     def setUp(self):
         self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina')
         self.athlete_info_1 = AthleteInfo.objects.create(user=self.athlete_1, goals='Love Run!', weight=56)
-
 
     def test_ok(self):
         data = AthleteInfoSerializer([self.athlete_info_1, ], many=True).data
@@ -140,6 +140,7 @@ class AthleteInfoSerializerTestCase(TestCase):
         ]
         self.assertEqual(data, expected_data)
 
+
 class ChallengeSerializerTestCase(TestCase):
     def setUp(self):
         self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina')
@@ -147,13 +148,31 @@ class ChallengeSerializerTestCase(TestCase):
         self.challenge_1 = Challenge.objects.create(athlete=self.athlete_info_1, full_name='Сделай 10 забегов!')
         self.run_1 = Run.objects.create(athlete=self.athlete_1, status='init')
 
-
     def test_ok(self):
         data = ChallengeSerializer([self.challenge_1, ], many=True).data
         expected_data = [
             {
                 'athlete': self.athlete_1.id,
                 'full_name': 'Сделай 10 забегов!',
+
+            },
+        ]
+        self.assertEqual(data, expected_data)
+
+class PositionsSerializerTestCase(TestCase):
+    def setUp(self):
+        self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina')
+        self.run_1 = Run.objects.create(athlete=self.athlete_1, status='init')
+        self.position_1 = Position.objects.create(run=self.run_1.id, latitude=0.0001, longitude=0.0001)
+
+    def test_ok(self):
+        data = PositionSerializer([self.position_1, ], many=True).data
+        expected_data = [
+            {
+                'id': self.position_1.id,
+                'run': self.run_1.id,
+                'latitude': 0.0001,
+                'longitude': 0.0001,
 
             },
         ]

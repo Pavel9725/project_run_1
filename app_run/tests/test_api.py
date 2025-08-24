@@ -3,8 +3,9 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from app_run.models import Run, AthleteInfo, Challenge
-from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer, ChallengeSerializer
+from app_run.models import Run, AthleteInfo, Challenge, Position
+from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer, ChallengeSerializer, \
+    PositionSerializer
 
 
 class RunApiTestCase(APITestCase):
@@ -265,8 +266,10 @@ class ChallengeTestCase(APITestCase):
     def setUp(self):
         self.athlete_1 = User.objects.create(username='Kristina', is_staff=True, is_superuser=False)
         self.athlete_2 = User.objects.create(username='Pavel', is_staff=True, is_superuser=False)
+
         self.athlete_info_1 = AthleteInfo.objects.create(user=self.athlete_1, goals='', weight=62)
         self.athlete_info_2 = AthleteInfo.objects.create(user=self.athlete_2, goals='', weight=78)
+
         self.challenge_1 = Challenge.objects.create(athlete=self.athlete_info_1, full_name='Сделай 10 забегов!')
         self.challenge_2 = Challenge.objects.create(athlete=self.athlete_info_1, full_name='Сделай 20 забегов!')
         self.challenge_3 = Challenge.objects.create(athlete=self.athlete_info_2, full_name='Сделай 10 забегов!')
@@ -284,3 +287,83 @@ class ChallengeTestCase(APITestCase):
         serializer_data = ChallengeSerializer([self.challenge_1, self.challenge_2], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
+
+
+class PositionTestCase(APITestCase):
+    def setUp(self):
+        self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina')
+        self.athlete_2 = User.objects.create(username='Pavel', last_name='Pavel', first_name='Grigorev')
+
+        self.run_1 = Run.objects.create(athlete=self.athlete_1, status='in_progress')
+        self.run_2 = Run.objects.create(athlete=self.athlete_2, status='init')
+        self.run_3 = Run.objects.create(athlete=self.athlete_2, status='in_progress')
+
+        self.position_1 = Position.objects.create(run=self.run_1.id, latitude=0.0001, longitude=0.0001)
+        self.position_2 = Position.objects.create(run=self.run_1.id, latitude=0.0002, longitude=0.0001)
+        self.position_3 = Position.objects.create(run=self.run_1.id, latitude=0.0001, longitude=0.0002)
+        self.position_4 = Position.objects.create(run=self.run_2.id, latitude=0.0000, longitude=0.0000)
+        self.position_5 = Position.objects.create(run=self.run_3.id, latitude=0.0001, longitude=0.0001)
+
+    def test_get(self):
+        url = reverse('api-positions-list')
+        response = self.client.get(url)
+        serializer_data = PositionSerializer(
+            [self.position_1, self.position_2, self.position_3, self.position_4, self.position_5], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_get_run_id(self):
+        url = reverse('api-positions-list')
+        response = self.client.get(url, {'run': self.run_1.id})
+        serializer_data = PositionSerializer([self.position_1, self.position_2, self.position_3], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_delete_position(self):
+        self.assertEqual(Position.objects.all().count(), 5)
+        url = reverse('api-positions-detail', args=(self.position_1.id,))
+        response = self.client.delete(url)
+        self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
+        self.assertEqual(Position.objects.all().count(), 4)
+
+    def test_validate_latitude(self):
+        url = reverse('api-positions-list')
+        data = {
+            'run': self.run_1.id,
+            'latitude': -95,
+            'longitude': 0
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    def test_validate_longitude(self):
+        url = reverse('api-positions-list')
+        data = {
+            'run': self.run_1.id,
+            'latitude': 0,
+            'longitude': -400
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    def test_run_position(self):
+        url = reverse('api-positions-list')
+        data = {
+            'run': self.run_2.id,
+            'latitude': 45,
+            'longitude': 45
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    def test_create_position(self):
+        self.assertEqual(Position.objects.all().count(), 5)
+        url = reverse('api-positions-list')
+        data = {
+            'run': self.run_3.id,
+            'latitude': 45,
+            'longitude': 45
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(Position.objects.all().count(), 6)
