@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.urls import reverse
+from geopy.distance import geodesic, distance
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -19,7 +20,7 @@ class RunApiTestCase(APITestCase):
         self.athlete_info_2 = AthleteInfo.objects.create(user=self.athlete_2)
         self.athlete_info_3 = AthleteInfo.objects.create(user=self.athlete_3)
 
-        self.run_1 = Run.objects.create(athlete=self.athlete_1, comment='', status='init')
+        self.run_1 = Run.objects.create(athlete=self.athlete_1, comment='', status='in_progress')
         self.run_2 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
         self.run_3 = Run.objects.create(athlete=self.athlete_2, comment='1 Run', status='in_progress')
         self.run_4 = Run.objects.create(athlete=self.athlete_2, comment='2 Run', status='in_progress')
@@ -34,13 +35,24 @@ class RunApiTestCase(APITestCase):
         self.run_13 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='finished')
         self.run_14 = Run.objects.create(athlete=self.athlete_1, comment='My 2 run!', status='in_progress')
         self.run_15 = Run.objects.create(athlete=self.athlete_4, comment='My 2 run!', status='in_progress')
+        self.run_16 = Run.objects.create(athlete=self.athlete_2, comment='My 2 run!', status='in_progress')
+
+        self.position_1 = Position.objects.create(run=self.run_3, latitude=0.001, longitude=0.001)
+        self.position_2 = Position.objects.create(run=self.run_3, latitude=0.010, longitude=0.011)
+        self.position_3 = Position.objects.create(run=self.run_15, latitude=0.0012, longitude=0.0020)
+        self.position_4 = Position.objects.create(run=self.run_15, latitude=0.23, longitude=0.045)
+        self.position_5 = Position.objects.create(run=self.run_14, latitude=0.23, longitude=0.123)
+        self.position_6 = Position.objects.create(run=self.run_14, latitude=0.0312, longitude=0.33)
+        self.position_7 = Position.objects.create(run=self.run_1, latitude=0.0312, longitude=0.33)
+        self.position_8 = Position.objects.create(run=self.run_16, latitude=0.5000, longitude=0.9)
+        self.position_9 = Position.objects.create(run=self.run_16, latitude=0.010, longitude=0.74)
 
     def test_get(self):
         url = reverse('api-runs-list')
         response = self.client.get(url)
         serializer_data = RunSerializer(
             [self.run_1, self.run_2, self.run_3, self.run_4, self.run_5, self.run_6, self.run_7, self.run_8, self.run_9,
-             self.run_10, self.run_11, self.run_12, self.run_13, self.run_14, self.run_15], many=True).data
+             self.run_10, self.run_11, self.run_12, self.run_13, self.run_14, self.run_15, self.run_16], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -59,7 +71,7 @@ class RunApiTestCase(APITestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertEqual(Run.objects.all().count(), 16)
+        self.assertEqual(Run.objects.all().count(), 17)
 
     def test_create_run_start(self):
         run = self.run_5
@@ -84,7 +96,7 @@ class RunApiTestCase(APITestCase):
         run.refresh_from_db()
         self.assertEqual(run.status, 'finished')
 
-    def test_create_run_stop_create_challenge(self):
+    def test_create_run_stop_create_10_challenge(self):
         self.assertEqual(Challenge.objects.filter(athlete=self.athlete_info_1).count(), 0)
         run = self.run_14
         url = reverse('api-runs-stop', args=[run.id])
@@ -93,6 +105,26 @@ class RunApiTestCase(APITestCase):
         run.refresh_from_db()
         self.assertEqual(run.status, 'finished')
         self.assertEqual(Challenge.objects.filter(athlete=self.athlete_info_1).count(), 1)
+
+    def test_create_run_stop_create_50km_challenge(self):
+        self.assertEqual(Challenge.objects.filter(athlete=self.athlete_info_2).count(), 0)
+        run = self.run_16
+        url = reverse('api-runs-stop', args=[run.id])
+        response = self.client.post(url, format='json')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        run.refresh_from_db()
+        self.assertEqual(run.status, 'finished')
+        self.assertEqual(Challenge.objects.filter(athlete=self.athlete_info_2).count(), 1)
+        self.assertTrue(Challenge.objects.filter(athlete=self.athlete_info_2, full_name='Пробеги 50 километров!').exists())
+
+    def test_create_run_stop_create_50km_challenge_distance_sum(self):
+        run = self.run_3
+        url = reverse('api-runs-stop', args=[run.id])
+        distance_data = 1.493
+        response = self.client.post(url, format='json')
+        run.refresh_from_db()
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertAlmostEqual(run.distance, distance_data, places=3)
 
     def test_not_athlete_info(self):
         run = self.run_15
@@ -108,23 +140,39 @@ class RunApiTestCase(APITestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         self.assertEqual({'detail': 'Invalid run status for starting.'}, response.data)
 
+    def test_create_run_stop_distance(self):
+        run = self.run_3
+        url = reverse('api-runs-stop', args=[run.id])
+        distance_data = 1.493
+        response = self.client.post(url, format='json')
+        run.refresh_from_db()
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertAlmostEqual(run.distance, distance_data, places=3)
+
+    def test_position_2(self):
+        run = self.run_1
+        url = reverse('api-runs-stop', args=[run.id])
+        response = self.client.post(url, format='json')
+        self.assertEqual(status.HTTP_422_UNPROCESSABLE_ENTITY, response.status_code)
+        self.assertEqual({'error': 'Run stopped.  Not enough positions to calculate distance.'}, response.data)
+
     def test_delete_run(self):
         url = reverse('api-runs-detail', args=(self.run_1.id,))
         response = self.client.delete(url)
         self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
-        self.assertEqual(Run.objects.all().count(), 14)
+        self.assertEqual(Run.objects.all().count(), 15)
 
     def test_get_filter_status(self):
         url = reverse('api-runs-list')
         response = self.client.get(url, data={'status': 'in_progress'})
-        serializer_data = RunSerializer([self.run_3, self.run_4, self.run_14, self.run_15], many=True).data
+        serializer_data = RunSerializer([self.run_1, self.run_3, self.run_4, self.run_14, self.run_15, self.run_16], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
     def test_get_filter_athlete(self):
         url = reverse('api-runs-list')
         response = self.client.get(url, data={'athlete': self.athlete_2.id})
-        serializer_data = RunSerializer([self.run_3, self.run_4, self.run_5], many=True).data
+        serializer_data = RunSerializer([self.run_3, self.run_4, self.run_5, self.run_16], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -133,7 +181,7 @@ class RunApiTestCase(APITestCase):
         response = self.client.get(url, data={'ordering': 'created_at'})
         serializer_data = RunSerializer(
             [self.run_1, self.run_2, self.run_3, self.run_4, self.run_5, self.run_6, self.run_7, self.run_8, self.run_9,
-             self.run_10, self.run_11, self.run_12, self.run_13, self.run_14, self.run_15], many=True).data
+             self.run_10, self.run_11, self.run_12, self.run_13, self.run_14, self.run_15, self.run_16], many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -298,11 +346,11 @@ class PositionTestCase(APITestCase):
         self.run_2 = Run.objects.create(athlete=self.athlete_2, status='init')
         self.run_3 = Run.objects.create(athlete=self.athlete_2, status='in_progress')
 
-        self.position_1 = Position.objects.create(run=self.run_1.id, latitude=0.0001, longitude=0.0001)
-        self.position_2 = Position.objects.create(run=self.run_1.id, latitude=0.0002, longitude=0.0001)
-        self.position_3 = Position.objects.create(run=self.run_1.id, latitude=0.0001, longitude=0.0002)
-        self.position_4 = Position.objects.create(run=self.run_2.id, latitude=0.0000, longitude=0.0000)
-        self.position_5 = Position.objects.create(run=self.run_3.id, latitude=0.0001, longitude=0.0001)
+        self.position_1 = Position.objects.create(run=self.run_1, latitude=0.0001, longitude=0.0001)
+        self.position_2 = Position.objects.create(run=self.run_1, latitude=0.0002, longitude=0.0001)
+        self.position_3 = Position.objects.create(run=self.run_1, latitude=0.0001, longitude=0.0002)
+        self.position_4 = Position.objects.create(run=self.run_2, latitude=0.0000, longitude=0.0000)
+        self.position_5 = Position.objects.create(run=self.run_3, latitude=0.0001, longitude=0.0001)
 
     def test_get(self):
         url = reverse('api-positions-list')

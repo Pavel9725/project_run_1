@@ -29,7 +29,8 @@ class RunSerializerTestCase(TestCase):
                     'last_name': '',
                     'first_name': ''
                 },
-                'status': 'init'
+                'status': 'init',
+                'distance': None
             },
             {
                 'id': self.run_2.id,
@@ -42,7 +43,8 @@ class RunSerializerTestCase(TestCase):
                     'last_name': '',
                     'first_name': ''
                 },
-                'status': 'init'
+                'status': 'init',
+                'distance': None
             },
             {
                 'id': self.run_3.id,
@@ -55,7 +57,8 @@ class RunSerializerTestCase(TestCase):
                     'last_name': '',
                     'first_name': ''
                 },
-                'status': 'init'
+                'status': 'init',
+                'distance': None
             },
 
         ]
@@ -163,7 +166,7 @@ class PositionsSerializerTestCase(TestCase):
     def setUp(self):
         self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina')
         self.run_1 = Run.objects.create(athlete=self.athlete_1, status='init')
-        self.position_1 = Position.objects.create(run=self.run_1.id, latitude=0.0001, longitude=0.0001)
+        self.position_1 = Position.objects.create(run=self.run_1, latitude=0.0001, longitude=0.0001)
 
     def test_ok(self):
         data = PositionSerializer([self.position_1, ], many=True).data

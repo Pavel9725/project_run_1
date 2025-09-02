@@ -19,13 +19,14 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from app_run.views import view_about, RunViewSet, UserViewSet, RunStartAPIView, RunStopAPIView, AthleteInfoView, \
-    ChallengeViewSet, PositionViewSet
+    ChallengeViewSet, PositionViewSet, CollectibleItemViewSet, UploadFileView
 
 router = DefaultRouter()
 router.register('api/runs', RunViewSet, basename='api-runs')
 router.register('api/users', UserViewSet, basename='api-users')
 router.register('api/challenges', ChallengeViewSet, basename='api-challenges')
 router.register('api/positions', PositionViewSet, basename='api-positions')
+router.register('api/collectible_item', CollectibleItemViewSet, basename='api-collectible-item')
 
 
 urlpatterns = [
@@ -35,6 +36,7 @@ urlpatterns = [
     path('api/runs/<int:run_id>/start/', RunStartAPIView.as_view(), name='api-runs-start'),
     path('api/runs/<int:run_id>/stop/', RunStopAPIView.as_view(), name='api-runs-stop'),
     path('api/athlete_info/<int:user_id>/', AthleteInfoView.as_view(), name='api-athlete-info'),
+    path('api/upload_file/', UploadFileView.as_view(), name='api-upload-file'),
 
 
 ]

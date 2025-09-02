@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.response import Response
 
-from app_run.models import Run, AthleteInfo, Challenge, Position
+from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 
 
 class UserRunSerializer(serializers.ModelSerializer):
@@ -17,7 +17,7 @@ class RunSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Run
-        fields = ('id', 'athlete', 'comment', 'created_at', 'athlete_data', 'status')
+        fields = ('id', 'athlete', 'comment', 'created_at', 'athlete_data', 'status', 'distance')
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -53,8 +53,7 @@ class PositionSerializer(serializers.ModelSerializer):
         fields = ('id','run', 'latitude', 'longitude')
 
     def validate_run(self, value):
-        run =  get_object_or_404(Run, id=value)
-        if run.status != 'in_progress':
+        if value.status != 'in_progress':
             raise serializers.ValidationError('Status run must be in_progress')
         return value
 
@@ -67,3 +66,8 @@ class PositionSerializer(serializers.ModelSerializer):
         if not (-180 <= value <= 180):
             raise serializers.ValidationError('Longitude must be between -180 and 180!')
         return round(value, 4)
+
+class CollectibleItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CollectibleItem
+        fields = ('id', 'name', 'uid', 'latitude', 'longitude', 'picture', 'value')

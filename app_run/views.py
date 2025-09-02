@@ -1,6 +1,9 @@
 from django.contrib.auth.models import User
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from geopy.distance import geodesic
+from openpyxl.reader.excel import load_workbook
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from django.conf import settings
@@ -9,9 +12,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from app_run.models import Run, AthleteInfo, Challenge, Position
+from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer, ChallengeSerializer, \
-    PositionSerializer
+    PositionSerializer, CollectibleItemSerializer
 
 
 @api_view(['GET'])
@@ -82,10 +85,34 @@ class RunStopAPIView(APIView):
         if run.status != 'in_progress':
             return Response({'detail': 'Invalid run status for starting.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        run.status = 'finished'
-        run.save()
-
         user = run.athlete
+
+        positions = list(run.positions.all().order_by('id'))
+
+        if len(positions) < 2:
+            run.status = 'finished'
+            run.save()
+            return Response({'error': 'Run stopped.  Not enough positions to calculate distance.'},
+                            status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        total_distance = 0
+        previous_coordinate = None
+
+        for position in positions:
+            coordinates = (position.latitude, position.longitude)
+
+            if previous_coordinate is not None:
+                distance = geodesic(previous_coordinate, coordinates).kilometers
+                total_distance += distance
+
+            previous_coordinate = coordinates
+
+        run.distance = round(total_distance, 3)
+        run.status = 'finished'
+        run.save(update_fields=['status', 'distance'])
+
+        sum_distance = Run.objects.filter(athlete=user, status='finished').aggregate(total_sum=Sum('distance'))[
+                           'total_sum'] or 0
 
         try:
             athlete_info = user.athleteinfo
@@ -95,6 +122,10 @@ class RunStopAPIView(APIView):
         if Run.objects.filter(athlete=user, status='finished').count() == 10:
             if not Challenge.objects.filter(athlete=athlete_info, full_name='Сделай 10 Забегов!').exists():
                 Challenge.objects.create(athlete=athlete_info, full_name='Сделай 10 Забегов!')
+
+        if sum_distance >= 50:
+            if not Challenge.objects.filter(athlete=athlete_info, full_name='Пробеги 50 километров!').exists():
+                Challenge.objects.create(athlete=athlete_info, full_name='Пробеги 50 километров!')
 
         return Response(RunSerializer(run).data, status=status.HTTP_200_OK)
 
@@ -130,6 +161,7 @@ class AthleteInfoView(APIView):
         serializer = AthleteInfoSerializer(athlete)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
 class ChallengeViewSet(viewsets.ModelViewSet):
     queryset = Challenge.objects.all()
     serializer_class = ChallengeSerializer
@@ -141,6 +173,7 @@ class ChallengeViewSet(viewsets.ModelViewSet):
             qs = qs.filter(athlete__id=athlete_id)
             return qs
         return qs
+
 
 class PositionViewSet(viewsets.ModelViewSet):
     queryset = Position.objects.all()
@@ -164,3 +197,43 @@ class PositionViewSet(viewsets.ModelViewSet):
         return Response({'id': position_id}, status=status.HTTP_201_CREATED, headers=headers)
 
 
+class CollectibleItemViewSet(viewsets.ModelViewSet):
+    queryset = CollectibleItem.objects.all()
+    serializer_class = CollectibleItemSerializer
+
+class UploadFileView(APIView):
+    def post(self, request):
+        uploaded_file = request.FILES.get('file')
+
+        if not uploaded_file:
+            return Response({'error': 'File not found.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not uploaded_file.name.endswith('.xlsx'):
+            return Response({'error': 'File is not xlsx.'}, status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+
+        wb = load_workbook(filename=uploaded_file, data_only=True)
+        #wb = load_workbook(r'C:\Users\Pavel\Downloads\upload_example.xlsx')
+        ws = wb.active
+        invalid_rows = []
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            row_list = list(row)
+
+            data = {
+                'name': row[0],
+                'uid': row[1],
+                'value': row[2],
+                'latitude': row[3],
+                'longitude': row[4],
+                'picture': row[5],
+            }
+            if CollectibleItem.objects.filter(uid=data['uid']).exists():
+                continue
+
+            serializer = CollectibleItemSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                invalid_rows.append(row_list)
+
+        return Response(invalid_rows, status=status.HTTP_201_CREATED)
