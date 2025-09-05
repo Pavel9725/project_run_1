@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer, ChallengeSerializer, \
-    PositionSerializer, CollectibleItemSerializer
+    PositionSerializer, CollectibleItemSerializer, UserCollectibleItemsSerializer
 
 
 @api_view(['GET'])
@@ -63,6 +63,13 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         if type == 'athlete':
             qs = qs.filter(is_staff=False)
         return qs
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return UserSerializer
+        elif self.action == 'retrieve':
+            return UserCollectibleItemsSerializer
+        return super().get_serializer_class()
 
 
 class RunStartAPIView(APIView):
@@ -209,10 +216,10 @@ class UploadFileView(APIView):
             return Response({'error': 'File not found.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not uploaded_file.name.endswith('.xlsx'):
-            return Response({'error': 'File is not xlsx.'}, status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+            return Response({'error': 'File not xlsx.'}, status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
         wb = load_workbook(filename=uploaded_file, data_only=True)
-        #wb = load_workbook(r'C:\Users\Pavel\Downloads\upload_example.xlsx')
+        #wb = load_workbook(r'C:\Users\pyatk\Downloads\upload_example.xlsx')
         ws = wb.active
         invalid_rows = []
 
@@ -220,20 +227,18 @@ class UploadFileView(APIView):
             row_list = list(row)
 
             data = {
-                'name': row[0],
-                'uid': row[1],
-                'value': row[2],
-                'latitude': row[3],
-                'longitude': row[4],
-                'picture': row[5],
-            }
+                    'name': row[0],
+                    'uid': row[1],
+                    'value': row[2],
+                    'latitude': row[3],
+                    'longitude': row[4],
+                    'picture': row[5],
+                }
             if CollectibleItem.objects.filter(uid=data['uid']).exists():
                 continue
-
             serializer = CollectibleItemSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
             else:
                 invalid_rows.append(row_list)
-
         return Response(invalid_rows, status=status.HTTP_201_CREATED)

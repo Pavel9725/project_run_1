@@ -35,6 +35,20 @@ class UserSerializer(serializers.ModelSerializer):
         return instance.runs.filter(status='finished').count()
 
 
+class CollectibleItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CollectibleItem
+        fields = ('id', 'name', 'uid', 'latitude', 'longitude', 'picture', 'value')
+
+
+class UserCollectibleItemsSerializer(UserSerializer):
+    items = CollectibleItemSerializer(many=True, source='collectible_items')
+
+    class Meta(UserSerializer.Meta):
+        model = User
+        fields = UserSerializer.Meta.fields + ('items', )
+
+
 class AthleteInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = AthleteInfo
@@ -50,7 +64,7 @@ class ChallengeSerializer(serializers.ModelSerializer):
 class PositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Position
-        fields = ('id','run', 'latitude', 'longitude')
+        fields = ('id', 'run', 'latitude', 'longitude')
 
     def validate_run(self, value):
         if value.status != 'in_progress':
@@ -66,8 +80,3 @@ class PositionSerializer(serializers.ModelSerializer):
         if not (-180 <= value <= 180):
             raise serializers.ValidationError('Longitude must be between -180 and 180!')
         return round(value, 4)
-
-class CollectibleItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CollectibleItem
-        fields = ('id', 'name', 'uid', 'latitude', 'longitude', 'picture', 'value')

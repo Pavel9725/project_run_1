@@ -415,3 +415,4 @@ class PositionTestCase(APITestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(Position.objects.all().count(), 6)
+
