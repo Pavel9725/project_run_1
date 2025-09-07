@@ -1,9 +1,9 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from app_run.models import Run, AthleteInfo, Challenge, Position
+from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 from app_run.serializers import RunSerializer, UserSerializer, UserRunSerializer, AthleteInfoSerializer, \
-    ChallengeSerializer, PositionSerializer
+    ChallengeSerializer, PositionSerializer, CollectibleItemSerializer, UserCollectibleItemsSerializer
 
 
 class RunSerializerTestCase(TestCase):
@@ -101,6 +101,69 @@ class UserSerializerTestCase(TestCase):
         self.assertEqual(data, expected_data)
 
 
+class UserCollectibleItemsSerializerTestCase(TestCase):
+    def setUp(self):
+        self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina',
+                                             is_staff=True)
+
+        self.collectible_item_1 = CollectibleItem.objects.create(
+            name='Item 1',
+            uid='uid1',
+            latitude=10.0,
+            longitude=20.0,
+            picture='http://example.com/pic1.jpg',
+            value=5
+        )
+        self.collectible_item_2 = CollectibleItem.objects.create(
+            name='Item 2',
+            uid='uid2',
+            latitude=11.0,
+            longitude=21.0,
+            picture='http://example.com/pic2.jpg',
+            value=10
+        )
+
+        self.athlete_1.collectible_items.add(self.collectible_item_1, self.collectible_item_2)
+
+    def test_ok(self):
+        data = UserCollectibleItemsSerializer(self.athlete_1).data
+
+        expected_items = [
+            {
+                'id': self.collectible_item_1.id,
+                'name': self.collectible_item_1.name,
+                'uid': self.collectible_item_1.uid,
+                'latitude': self.collectible_item_1.latitude,
+                'longitude': self.collectible_item_1.longitude,
+                'picture': self.collectible_item_1.picture,
+                'value': self.collectible_item_1.value,
+            },
+            {
+                'id': self.collectible_item_2.id,
+                'name': self.collectible_item_2.name,
+                'uid': self.collectible_item_2.uid,
+                'latitude': self.collectible_item_2.latitude,
+                'longitude': self.collectible_item_2.longitude,
+                'picture': self.collectible_item_2.picture,
+                'value': self.collectible_item_2.value,
+            }
+        ]
+
+        expected_data = {
+            'id': self.athlete_1.id,
+            'username': self.athlete_1.username,
+            'first_name': self.athlete_1.first_name,
+            'last_name': self.athlete_1.last_name,
+            'email': self.athlete_1.email,
+            'items': expected_items,
+        }
+
+        for field in UserCollectibleItemsSerializer.Meta.fields:
+            self.assertIn(field, data)
+
+        self.assertEqual(data['items'], expected_items)
+
+
 class UserRunSerializerTestCase(TestCase):
     def setUp(self):
         self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina',
@@ -162,6 +225,7 @@ class ChallengeSerializerTestCase(TestCase):
         ]
         self.assertEqual(data, expected_data)
 
+
 class PositionsSerializerTestCase(TestCase):
     def setUp(self):
         self.athlete_1 = User.objects.create(username='Kristina', last_name='Kristina', first_name='Pyatkina')
@@ -177,6 +241,34 @@ class PositionsSerializerTestCase(TestCase):
                 'latitude': 0.0001,
                 'longitude': 0.0001,
 
+            },
+        ]
+        self.assertEqual(data, expected_data)
+
+
+class CollectibleItemsSerializerTestCase(TestCase):
+    def setUp(self):
+        self.collectible_item_1 = CollectibleItem.objects.create(
+            name='Test Item',
+            uid='unique123',
+            latitude=55.7558,
+            longitude=37.6173,
+            picture='http://example.com/pic.jpg',
+            value=10
+        )
+
+    def test_ok(self):
+        data = CollectibleItemSerializer([self.collectible_item_1], many=True).data
+
+        expected_data = [
+            {
+                'id': self.collectible_item_1.id,
+                'name': 'Test Item',
+                'uid': 'unique123',
+                'latitude': 55.7558,
+                'longitude': 37.6173,
+                'picture': 'http://example.com/pic.jpg',
+                'value': 10,
             },
         ]
         self.assertEqual(data, expected_data)

@@ -203,10 +203,35 @@ class PositionViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response({'id': position_id}, status=status.HTTP_201_CREATED, headers=headers)
 
+    def perform_create(self, serializer):
+        position = serializer.save()
+
+        athlete = position.run.athlete
+
+        items = list(CollectibleItem.objects.all())
+
+        collected_ids = set(athlete.collectible_items.values_list('id', flat=True))
+        items_add = []
+
+        pos_athlete = (position.latitude, position.longitude)
+
+        for item in items:
+            if item.id in collected_ids:
+                continue
+
+            pos_item = (item.latitude, item.longitude)
+            dist = geodesic(pos_athlete, pos_item).meters
+
+            if dist <= 100:
+                items_add.append(item)
+
+            if items_add:
+                athlete.collectible_items.add(*items_add)
 
 class CollectibleItemViewSet(viewsets.ModelViewSet):
     queryset = CollectibleItem.objects.all()
     serializer_class = CollectibleItemSerializer
+
 
 class UploadFileView(APIView):
     def post(self, request):
@@ -219,7 +244,7 @@ class UploadFileView(APIView):
             return Response({'error': 'File not xlsx.'}, status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
         wb = load_workbook(filename=uploaded_file, data_only=True)
-        #wb = load_workbook(r'C:\Users\pyatk\Downloads\upload_example.xlsx')
+        # wb = load_workbook(r'C:\Users\pyatk\Downloads\upload_example.xlsx')
         ws = wb.active
         invalid_rows = []
 
@@ -227,13 +252,13 @@ class UploadFileView(APIView):
             row_list = list(row)
 
             data = {
-                    'name': row[0],
-                    'uid': row[1],
-                    'value': row[2],
-                    'latitude': row[3],
-                    'longitude': row[4],
-                    'picture': row[5],
-                }
+                'name': row[0],
+                'uid': row[1],
+                'value': row[2],
+                'latitude': row[3],
+                'longitude': row[4],
+                'picture': row[5],
+            }
             if CollectibleItem.objects.filter(uid=data['uid']).exists():
                 continue
             serializer = CollectibleItemSerializer(data=data)

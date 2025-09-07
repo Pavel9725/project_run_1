@@ -4,9 +4,9 @@ from geopy.distance import geodesic, distance
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from app_run.models import Run, AthleteInfo, Challenge, Position
+from app_run.models import Run, AthleteInfo, Challenge, Position, CollectibleItem
 from app_run.serializers import RunSerializer, UserSerializer, AthleteInfoSerializer, ChallengeSerializer, \
-    PositionSerializer
+    PositionSerializer, UserCollectibleItemsSerializer
 
 
 class RunApiTestCase(APITestCase):
@@ -115,7 +115,8 @@ class RunApiTestCase(APITestCase):
         run.refresh_from_db()
         self.assertEqual(run.status, 'finished')
         self.assertEqual(Challenge.objects.filter(athlete=self.athlete_info_2).count(), 1)
-        self.assertTrue(Challenge.objects.filter(athlete=self.athlete_info_2, full_name='Пробеги 50 километров!').exists())
+        self.assertTrue(
+            Challenge.objects.filter(athlete=self.athlete_info_2, full_name='Пробеги 50 километров!').exists())
 
     def test_create_run_stop_create_50km_challenge_distance_sum(self):
         run = self.run_3
@@ -165,7 +166,8 @@ class RunApiTestCase(APITestCase):
     def test_get_filter_status(self):
         url = reverse('api-runs-list')
         response = self.client.get(url, data={'status': 'in_progress'})
-        serializer_data = RunSerializer([self.run_1, self.run_3, self.run_4, self.run_14, self.run_15, self.run_16], many=True).data
+        serializer_data = RunSerializer([self.run_1, self.run_3, self.run_4, self.run_14, self.run_15, self.run_16],
+                                        many=True).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -193,6 +195,10 @@ class UserApiTestCase(APITestCase):
         self.athlete_2 = User.objects.create(username='Miha', first_name='Misha', last_name='Pavioshvili',
                                              is_staff=True, is_superuser=False)
         self.athlete_3 = User.objects.create(username='Pavel', first_name='Pavel', is_staff=False, is_superuser=False)
+
+        self.collectible_item_1 = CollectibleItem.objects.create(name='chocolate', uid='123', latitude=76.21,
+                                                                 longitude=32.21, value=1, picture='www.google.com')
+        self.athlete_1.collectible_items.add(self.collectible_item_1)
 
     def test_get_excluding_superuser(self):
         url = reverse('api-users-list')
@@ -226,6 +232,13 @@ class UserApiTestCase(APITestCase):
         url = reverse('api-users-list')
         response = self.client.get(url, data={'ordering': 'date_joined'})
         serializer_data = UserSerializer([self.athlete_1, self.athlete_2, self.athlete_3], many=True).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_get_user_id_collectible_items(self):
+        url = reverse('api-users-detail', args=(self.athlete_1.id,))
+        response = self.client.get(url)
+        serializer_data = UserCollectibleItemsSerializer(self.athlete_1).data
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(serializer_data, response.data)
 
@@ -346,11 +359,14 @@ class PositionTestCase(APITestCase):
         self.run_2 = Run.objects.create(athlete=self.athlete_2, status='init')
         self.run_3 = Run.objects.create(athlete=self.athlete_2, status='in_progress')
 
-        self.position_1 = Position.objects.create(run=self.run_1, latitude=0.0001, longitude=0.0001)
+        self.position_1 = Position.objects.create(run=self.run_1, latitude=0.0001, longitude=0.0002)
         self.position_2 = Position.objects.create(run=self.run_1, latitude=0.0002, longitude=0.0001)
         self.position_3 = Position.objects.create(run=self.run_1, latitude=0.0001, longitude=0.0002)
         self.position_4 = Position.objects.create(run=self.run_2, latitude=0.0000, longitude=0.0000)
         self.position_5 = Position.objects.create(run=self.run_3, latitude=0.0001, longitude=0.0001)
+
+        self.collectible_item_1 = CollectibleItem.objects.create(name='chocolate', uid='123', latitude=76.21,
+                                                                 longitude=32.21, value=1, picture='www.google.com')
 
     def test_get(self):
         url = reverse('api-positions-list')
@@ -416,3 +432,64 @@ class PositionTestCase(APITestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(Position.objects.all().count(), 6)
 
+    def test_get_detail(self):
+        url = reverse('api-positions-detail', args=(self.position_1.id,))
+        response = self.client.get(url)
+        serializer_data = PositionSerializer(self.position_1).data
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(serializer_data, response.data)
+
+    def test_update_position(self):
+        url = reverse('api-positions-detail', args=(self.position_1.id,))
+        data = {
+            'run': self.run_1.id,
+            'latitude': 10.0,
+            'longitude': 20.0
+        }
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.position_1.refresh_from_db()
+        self.assertEqual(self.position_1.latitude, 10.0)
+        self.assertEqual(self.position_1.longitude, 20.0)
+
+    def test_partial_update_position(self):
+        url = reverse('api-positions-detail', args=(self.position_1.id,))
+        data = {'latitude': 15.0}
+        response = self.client.patch(url, data, format='json')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.position_1.refresh_from_db()
+        self.assertEqual(self.position_1.latitude, 15.0)
+
+    def test_create_position_adds_collectible_items(self):
+        self.assertNotIn(self.collectible_item_1, self.athlete_1.collectible_items.all())
+        url = reverse('api-positions-list')
+        data = {
+            'run': self.run_1.id,
+            'latitude': 76.21001,
+            'longitude': 32.21
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        self.athlete_1.refresh_from_db()
+        collected_items = self.athlete_1.collectible_items.all()
+        self.assertIn(self.collectible_item_1, collected_items)
+
+    def test_create_position_skips_already_collected_items(self):
+        self.athlete_1.collectible_items.add(self.collectible_item_1)
+        collected_ids_before = set(self.athlete_1.collectible_items.values_list('id', flat=True))
+        self.assertIn(self.collectible_item_1.id, collected_ids_before)
+
+        url = reverse('api-positions-list')
+        data = {
+            'run': self.run_1.id,
+            'latitude': 76.21001,
+            'longitude': 32.21
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+
+        self.athlete_1.refresh_from_db()
+        collected_ids_after = set(self.athlete_1.collectible_items.values_list('id', flat=True))
+
+        self.assertEqual(collected_ids_before, collected_ids_after)
