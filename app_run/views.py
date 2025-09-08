@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.db.models import Sum
+from django.db.models import Sum, Min, Max
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from geopy.distance import geodesic
@@ -116,7 +116,18 @@ class RunStopAPIView(APIView):
 
         run.distance = round(total_distance, 3)
         run.status = 'finished'
-        run.save(update_fields=['status', 'distance'])
+
+        run_agg = run.positions.aggregate(min_time=Min('date_time', max_time=Max('date_time')))
+        min_time = run_agg['min_time']
+        max_time = run_agg['max_time']
+
+        #А если передано одно время? Нужно обработать этот случай!
+        if min_time and max_time:
+            run_time = max_time - min_time
+            run.run_time_seconds = int(run_time.total_seconds())
+
+
+        run.save(update_fields=['status', 'distance', 'run_time_seconds'])
 
         sum_distance = Run.objects.filter(athlete=user, status='finished').aggregate(total_sum=Sum('distance'))[
                            'total_sum'] or 0
@@ -197,7 +208,7 @@ class PositionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        position = self.perform_create(serializer)
 
         position_id = serializer.data['id']
         headers = self.get_success_headers(serializer.data)
@@ -227,6 +238,7 @@ class PositionViewSet(viewsets.ModelViewSet):
 
             if items_add:
                 athlete.collectible_items.add(*items_add)
+
 
 class CollectibleItemViewSet(viewsets.ModelViewSet):
     queryset = CollectibleItem.objects.all()
