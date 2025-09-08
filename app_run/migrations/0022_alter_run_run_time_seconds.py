@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='run',
             name='run_time_seconds',
-            field=models.IntegerField(blank=True, default=0, null=True),
+            field=models.IntegerField(blank=True, null=True),
         ),
     ]

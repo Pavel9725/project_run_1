@@ -17,7 +17,7 @@ class RunSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Run
-        fields = ('id', 'athlete', 'comment', 'created_at', 'athlete_data', 'status', 'distance')
+        fields = ('id', 'athlete', 'comment', 'created_at', 'athlete_data', 'status', 'distance', 'run_time_seconds')
 
 
 class UserSerializer(serializers.ModelSerializer):

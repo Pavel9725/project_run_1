@@ -38,7 +38,7 @@ class Position(models.Model):
     run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='positions')
     latitude = models.FloatField()
     longitude = models.FloatField()
-    date_time = models.DateTimeField()
+    date_time = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f'run:{self.run}'

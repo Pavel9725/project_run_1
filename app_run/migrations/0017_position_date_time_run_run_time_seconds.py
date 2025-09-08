@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='position',
             name='date_time',
-            field=models.DateTimeField(default=0),
+            field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name='run',

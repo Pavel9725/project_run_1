@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='position',
             name='date_time',
-            field=models.DateTimeField(),
+            field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='run',

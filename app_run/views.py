@@ -117,15 +117,13 @@ class RunStopAPIView(APIView):
         run.distance = round(total_distance, 3)
         run.status = 'finished'
 
-        run_agg = run.positions.aggregate(min_time=Min('date_time', max_time=Max('date_time')))
+        run_agg = run.positions.aggregate(min_time=Min('date_time'), max_time=Max('date_time'))
         min_time = run_agg['min_time']
         max_time = run_agg['max_time']
 
-        #А если передано одно время? Нужно обработать этот случай!
         if min_time and max_time:
             run_time = max_time - min_time
             run.run_time_seconds = int(run_time.total_seconds())
-
 
         run.save(update_fields=['status', 'distance', 'run_time_seconds'])
 
